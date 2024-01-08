@@ -3,7 +3,7 @@ The primary repo for all project code for ME EN 3230 - Mechatronics in Spring 20
 
 Team members include:
 
-Kin Blandford
-Andrew Tolton
-Derek Williams
-Hyrum Coleman
+- Kin Blandford
+- Andrew Tolton
+- Derek Williams
+- Hyrum Coleman
