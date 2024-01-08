@@ -1,9 +1,14 @@
-void setup() {
-  // put your setup code here, to run once:
+#include <Arduino.h>
+#define gamer_pin 13
 
-}
+int main() {
+  init();
+  pinMode(gamer_pin, OUTPUT);
+  digitalWrite(gamer_pin, HIGH);
 
-void loop() {
-  // put your main code here, to run repeatedly:
-
+  while (true) {
+    
+    delay(100);
+    digitalWrite(gamer_pin, !digitalRead(gamer_pin));
+  }
 }
