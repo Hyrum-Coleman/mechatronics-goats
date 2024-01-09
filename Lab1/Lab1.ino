@@ -11,24 +11,13 @@ int main() {
   init(); // Needed to get the board moving since we're not using setup() and loop()
   Serial.begin(9600);
 
-  vector<int> nums = {1, 3, 5, 0, 12};
-  vector<int> odd_vals;
-  auto pred = [](int num){
-    auto ret = !(num % 2);
-    cout << "In function return val: " << ret << endl;
-    return ret;
-  };
-
-  remove_copy_if(nums.begin(), nums.end(), std::back_inserter(odd_vals), pred);
-
-  for (auto val : odd_vals) {
-    cout << val << " ";
-  }
-  cout << endl;
-
-  time = millis();
 
   while (true) {
-    
+    time = millis();
+
+    if ( time-timeOld >= 2000 ) {
+      cout << "Hello World - " << (float)time /1000 << " sec" << endl;
+      timeOld = time;
+    }
   }
 }
