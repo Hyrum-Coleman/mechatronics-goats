@@ -1,23 +1,21 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <ArduinoSTL.h>
+#include "TimerUtility.h"
 
 using namespace std;
 
-unsigned long time = 0;
-unsigned long timeOld = 0;
+void timerCallback() {
+  cout << "Hello World - " << (float)millis() / 1000 << " sec" << endl;
+}
 
 int main() {
-  init(); // Needed to get the board moving since we're not using setup() and loop()
+  init();  // Needed to get the board moving since we're not using setup() and loop()
   Serial.begin(9600);
 
+  Timer timer(2000, timerCallback);
 
   while (true) {
-    time = millis();
-
-    if ( time-timeOld >= 2000 ) {
-      cout << "Hello World - " << (float)time /1000 << " sec" << endl;
-      timeOld = time;
-    }
+    timer.check();
   }
 }
