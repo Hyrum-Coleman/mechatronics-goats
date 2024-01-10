@@ -3,7 +3,7 @@
 #include <ArduinoSTL.h>
 #include "TimerUtility.h"
 
-using namespace std;
+using namespace std; //lol
 
 void timerCallback() {
   cout << "Hello World - " << (float)millis() / 1000 << " sec" << endl;
