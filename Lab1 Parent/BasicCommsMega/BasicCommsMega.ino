@@ -16,5 +16,11 @@ void setup()
 
 void loop() // run over and over
 {
+  if (Serial.available()) {
+    Serial1.println(Serial.readStringUntil('\n'));
+  }
 
+  if (Serial1.available()) {
+    Serial.println(Serial1.readStringUntil('\n'));
+  }
 }
