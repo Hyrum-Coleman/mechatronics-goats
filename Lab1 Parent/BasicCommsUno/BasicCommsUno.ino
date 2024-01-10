@@ -27,5 +27,4 @@ void loop() // run over and over
   if (mySerial.available()) {
     Serial.println(mySerial.readStringUntil('\n'));
   }
-
 }
