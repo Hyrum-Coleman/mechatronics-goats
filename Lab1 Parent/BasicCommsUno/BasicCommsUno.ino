@@ -15,8 +15,8 @@ void setup()
 
   // Send a message to the other Arduino board
   mySerial.print("Hello other Arduino!");
-
-}
+ 
+} /test
 
 void loop() // run over and over
 {
