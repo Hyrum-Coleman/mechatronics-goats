@@ -18,7 +18,13 @@ void setup()
 
 }
 
-void loop() // run over and over
-{
+void loop() { // run over and over
 
+  if (Serial.available()) {
+    mySerial.println(Serial.readStringUntil('\n'))
+  }
+
+  if (mySerial.available()) {
+    Serial.println(mySerial.readStringUntil('\n'));
+  } 
 }

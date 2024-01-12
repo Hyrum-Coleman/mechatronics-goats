@@ -1,5 +1,4 @@
-void setup()  
-{
+void setup() {
   // Open serial communications with computer and wait for port to open:
   Serial.begin(9600);
 
@@ -11,10 +10,15 @@ void setup()
 
   // Send a message to the other Arduino board
   Serial1.print("Hello other Arduino!");
-
 }
 
-void loop() // run over and over
-{
+void loop() { // run over and over
 
+  if (Serial.available()) {
+    Serial1.println(Serial.readStringUntil('\n'));
+  }
+
+  if (Serial1.available()) {
+    Serial.println(Serial1.readStringUntil('\n'));
+  }
 }
