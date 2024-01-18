@@ -3,8 +3,8 @@
 #include "DualTB9051FTGMotorShield.h"
 DualTB9051FTGMotorShield md;
 
-const int Apin = 0; // Analog input pin for motor voltage
-const int Dpin = 6; // GDigital input pin from DAQ
+const int Apin = A13; // Analog input pin for motor voltage
+const int Dpin = 3; // GDigital input pin from DAQ
 const int LEDpin = 5; // Digital output pin for LED
 
 void setup() {
@@ -22,8 +22,8 @@ void loop() {
   
   if(button) { //if true
     digitalWrite(LEDpin,HIGH); // then light the LED
-    M=200;  // Initial M value. Comment out after adding the slider in the next section
-    // M = map(Mval,0,1024,-400,400); // motor control value. Comment back in after adding the slider
+    //M=200;  // Initial M value. Comment out after adding the slider in the next section
+    M = map(Mval,0,1024,-400,400); // motor control value. Comment back in after adding the slider
   }
   else{ //if false
     digitalWrite(LEDpin,LOW); // then turn off LED
