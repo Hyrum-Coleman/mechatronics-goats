@@ -5,3 +5,4 @@ CAD NOTES -- Checklist for later
 
 - Guidewall and frame should be a little wider (1/8" maybe) for 
   block tolerance
+- How do we mount the wheels lower? (Platform doesn't reach 6 in high, only 5.7)
