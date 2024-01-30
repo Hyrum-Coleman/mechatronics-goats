@@ -1,0 +1,7 @@
+CAD NOTES -- Checklist for later
+
+- What size screws do we have access to? (Tensioning screws)
+- What is thickness of belt? (Roller diameter)
+
+- Guidewall and frame should be a little wider (1/8" maybe) for 
+  block tolerance
