@@ -8,7 +8,12 @@ int main() {
     init();  // Initialize board
     Serial.begin(9600);
 
-    while (true) {
 
-    }
+    loop();
+}
+
+void loop() {
+  while (true) {
+
+  }
 }
