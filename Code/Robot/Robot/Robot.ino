@@ -22,6 +22,7 @@ int main() {
 
 void loop() {
   bool start;
+  states state = DRIVING;
   while (true) {
     // Check if data is available to read from Serial3
     if (Serial3.available() > 0) {  // zero will change here so I'm not going to try and predict what it will be
@@ -37,7 +38,11 @@ void loop() {
     }
 
     if (start) {
-      md.setSpeeds(180, 250, 500, 254);  //sets speeds of all 4 mecanum wheel motors
+      switch (state) {
+        case DRIVING:
+          md.setSpeeds(180, 250, 500, 254);  //sets speeds of all 4 mecanum wheel motors
+          break;
+      }
     }
   }
 }
