@@ -8,6 +8,7 @@ DualTB9051FTGMotorShieldMod3230 md;
 
 enum states {
   DRIVING = 0,
+  WAITING_TO_START = 1,
 };
 
 int main() {
@@ -21,28 +22,22 @@ int main() {
 }
 
 void loop() {
-  bool start_signal;
-  states state = DRIVING;
+  states state = WAITING_TO_START;
   String inputString = "";            // Holds incoming data from Serial3
   boolean messageInProgress = false;  // Indicates if message parsing is in progress
   while (true) {
 
-    String message = read_serial(inputString, messageInProgress);
-    
-    // Check if the incoming byte is '1' or '0' and set the start flag accordingly
-    if (message == "") {
-
-    } else if (message == "<1>") {
-      start_signal = true;
-    } else if (message == "<0>") {
-      start_signal = false;
-    }
-  }
-
-  if (start_signal) {
     switch (state) {
+      case WAITING_TO_START:
+        String message = read_serial(inputString, messageInProgress);
+        if (message == "") {
+          continue;
+        } else if (message == "<1>") {
+          state = DRIVING;
+        }
+        break;
       case DRIVING:
-        md.setSpeeds(180, 250, 500, 254);  //sets speeds of all 4 mecanum wheel motors
+        md.setSpeeds(150, 250, 400, 300);  //sets speeds of all 4 mecanum wheel motors
         break;
     }
   }
