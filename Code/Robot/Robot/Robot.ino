@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
+#include <StreamUtils.h>
 #include <DualTB9051FTGMotorShieldMod3230.h>
 
 using namespace std;
@@ -16,6 +17,7 @@ int main() {
   init();  // Initialize board
   Serial.begin(9600);
   Serial3.begin(9600);
+  Serial3.setTimeout(10000);
 
   JsonDocument doc;
 
@@ -44,7 +46,7 @@ void loop(JsonDocument doc) {
   }
 }
 
-void read_serial(JsonDocument doc) {
+void read_serial(JsonDocument &doc) {
   DeserializationError error = deserializeJson(doc, Serial3);
 
     // Test if parsing succeeds.
