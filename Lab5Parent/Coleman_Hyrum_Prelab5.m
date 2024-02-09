@@ -32,7 +32,7 @@ function [magnitude_dB, phase_deg] = filter_response(filter_type, R, C, f)
             phase_rad = -atan(f ./ f_c);
         case 'high'
             H = (f ./ f_c) ./ sqrt(1 + (f ./ f_c).^2);
-            phase_rad = atan(f_c ./ f) - pi/2; % Phase starts at -90 degrees for high pass
+            phase_rad = atan(f_c ./ f);
         otherwise
             error('Invalid filter type. Use ''low'' or ''high''.');
     end
