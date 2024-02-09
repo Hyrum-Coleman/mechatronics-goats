@@ -45,7 +45,6 @@ void loop(JsonDocument doc) {
 }
 
 void read_serial(JsonDocument doc) {
-
   DeserializationError error = deserializeJson(doc, Serial3);
 
     // Test if parsing succeeds.
