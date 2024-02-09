@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(10, 11); // RX, TX
+SoftwareSerial mySerial(2, 3); // RX, TX
 
 void setup()  
 {
@@ -21,7 +21,7 @@ void setup()
 void loop() { // run over and over
 
   if (Serial.available()) {
-    mySerial.println(Serial.readStringUntil('\n'))
+    mySerial.println(Serial.readStringUntil('\n'));
   }
 
   if (mySerial.available()) {
