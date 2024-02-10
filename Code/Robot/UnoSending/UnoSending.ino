@@ -11,12 +11,24 @@ void setup() {
   sendingSerial.begin(9600);
   doc["d"] = 1;
   doc.shrinkToFit();  // optional
+  
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  WriteLoggingStream loggingStream(sendingSerial, Serial);
-  serializeJson(doc, loggingStream);
+
+
+  if (Serial.available() > 4) {
+    DeserializationError error = deserializeJson(doc, Serial);
+
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      doc.clear();
+    }
+  }
+
+
+  // WriteLoggingStream loggingStream(sendingSerial, Serial);
+  serializeJson(doc, sendingSerial);
   sendingSerial.println();
-  delay(1000);
 }
