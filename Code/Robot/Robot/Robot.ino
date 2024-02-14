@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoSTL.h>
+#include <ArduinoJson.h>
+#include <StreamUtils.h>
 #include <DualTB9051FTGMotorShieldMod3230.h>
 
 using namespace std;
@@ -15,24 +17,25 @@ int main() {
   init();  // Initialize board
   Serial.begin(9600);
   Serial3.begin(9600);
+  Serial3.setTimeout(10000);
+
+  JsonDocument doc;
 
 
   md.enableDrivers();
-  loop();
+  loop(doc);
 }
 
-void loop() {
-  states state = WAITING_TO_START;
-  String inputString = "";            // Holds incoming data from Serial3
-  boolean messageInProgress = false;  // Indicates if message parsing is in progress
+void loop(JsonDocument doc) {
+  states state = WAITING_TO_START;    // Holds incoming data from Serial3
   while (true) {
 
     switch (state) {
       case WAITING_TO_START:
-        String message = read_serial(inputString, messageInProgress);
-        if (message == "") {
+        read_serial(doc); // mutates doc
+        if (doc.isNull()) {
           continue;
-        } else if (message == "<1>") {
+        } else if (doc.containsKey("d")) {
           state = DRIVING;
         }
         break;
@@ -43,29 +46,13 @@ void loop() {
   }
 }
 
-String read_serial(String inputString, bool messageInProgress) {
-  // Check if data is available to read from Serial3
-  while (Serial3.available() > 0) {  // read every byte!
-    // Read the incoming byte from Serial3
-    char inChar = Serial3.read();
+void read_serial(JsonDocument &doc) {
+  DeserializationError error = deserializeJson(doc, Serial3);
 
-    // First character qualifier <
-    if (inChar == '<' && !messageInProgress) {
-      inputString = "";          // Clear the string
-      messageInProgress = true;  // Start collecting message
-      continue;                  // Skip further processing for this character
-    }
-    // Last character qualifier >
-    if (inChar == '>' && messageInProgress) {
-      // Process complete message
-      messageInProgress = false;  // Reset for next message
-      continue;                   // Skip further processing for this character
-    }
-
-    if (messageInProgress) {
-      inputString += inChar;
-    }
+    // Test if parsing succeeds.
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
+    return;
   }
-
-  return inputString;
 }
