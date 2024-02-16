@@ -9,9 +9,19 @@ SoftwareSerial sendingSerial(2, 3);
 void setup() {
   Serial.begin(9600);
   sendingSerial.begin(9600);
-  doc["d"] = 1;
-  doc.shrinkToFit();  // optional
-  
+
+  JsonArray arr = doc.createNestedArray("d");
+  JsonObject obj = arr.createNestedObject();
+  obj["a"] = "w";
+  obj["t"] = 2;
+
+  // JsonArray array;
+  // array.add(2);
+  // doc.add(array);
+  // JsonObject nestedObject;
+  // nestedObject["a"] = "w";
+  // nestedObject["t"] = 2;
+  // array.add(nestedObject);
 }
 
 void loop() {
@@ -28,7 +38,8 @@ void loop() {
   }
 
 
-  // WriteLoggingStream loggingStream(sendingSerial, Serial);
-  serializeJson(doc, sendingSerial);
+  WriteLoggingStream loggingStream(sendingSerial, Serial);
+  serializeJson(doc, loggingStream);
   sendingSerial.println();
+  delay(1000);
 }
