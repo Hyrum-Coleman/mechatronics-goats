@@ -36,3 +36,5 @@
 # Ignore Solidworks System files
 ~$*.SLDPRT
 ~$*.SLDASM
+
+Pins/~$Organized_Pin_Table.xlsx
