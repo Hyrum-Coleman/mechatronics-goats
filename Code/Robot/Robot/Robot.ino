@@ -15,7 +15,7 @@ L298NMotorDriverMega smol_motors(5, 32, 33, 6, 34, 35);
 Wheelbase* wheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 
 struct Move {
-  signed char direction;
+  unsigned short direction;
   unsigned short time;
 };
 
@@ -43,7 +43,7 @@ int main() {
 
 void loop(JsonDocument doc) {
   queue<Move>* sillyQueue = new queue<Move>();
-  states state = WAITING_TO_START;  // Holds incoming data from Serial3
+  states state = WAITING_TO_START;  // Holds incoming data from Serial2
   while (true) {
 
     switch (state) {
@@ -74,24 +74,31 @@ void loop(JsonDocument doc) {
         sillyQueue->pop();
 
         switch (nextMove.direction) {
-          case 'w':
-            wheelbase->computeWheelSpeeds(0, 10, 0, motorSpeeds);
-            break;
-          case 'a':
+          case 1:  // forwards
             wheelbase->computeWheelSpeeds(10, 0, 0, motorSpeeds);
             break;
-          case 's':
+          case 2:  // left
             wheelbase->computeWheelSpeeds(0, -10, 0, motorSpeeds);
             break;
-          case 'd':
+          case 3:  // backwards
             wheelbase->computeWheelSpeeds(-10, 0, 0, motorSpeeds);
             break;
+          case 4:  // right
+            wheelbase->computeWheelSpeeds(0, 10, 0, motorSpeeds);
+            break;
+          case 5:
+            smol_motors.setM1Speed(200);
+            break;
+            case 6:
+            smol_motors.setM2Speed(200);
           default:
             Serial.println("unexpected input in direction switch (line 86)");
+            Serial.println(nextMove.direction);
             break;
         }
-        for(int i = 0; i < 4; i++) {
-          motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -400, 400);
+        for (int i = 0; i < 4; i++) {
+          motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -50, 50);
+          Serial.println(motorSpeeds[i]);
         }
         mecanum_motors.setSpeeds(motorSpeeds[0], motorSpeeds[1], motorSpeeds[2], motorSpeeds[3]);  //sets speeds of all 4 mecanum wheel motors
         delay(nextMove.time * 1000);
