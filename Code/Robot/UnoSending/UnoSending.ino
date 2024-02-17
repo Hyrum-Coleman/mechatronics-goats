@@ -12,16 +12,8 @@ void setup() {
 
   JsonArray arr = doc.createNestedArray("d");
   JsonObject obj = arr.createNestedObject();
-  obj["a"] = "w";
+  obj["a"] = 2;
   obj["t"] = 2;
-
-  // JsonArray array;
-  // array.add(2);
-  // doc.add(array);
-  // JsonObject nestedObject;
-  // nestedObject["a"] = "w";
-  // nestedObject["t"] = 2;
-  // array.add(nestedObject);
 }
 
 void loop() {
