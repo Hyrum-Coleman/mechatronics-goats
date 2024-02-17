@@ -5,7 +5,7 @@
 #include <DualTB9051FTGMotorShieldMod3230.h>
 #include <L298NMotorDriverMega.h>
 #include <queue>
-#include <Wheelbase.h>
+#include "Wheelbase.h"
 
 using namespace std;
 
@@ -43,65 +43,72 @@ int main() {
 
 void loop(JsonDocument doc) {
   queue<Move>* sillyQueue = new queue<Move>();
-  states state = WAITING_TO_START;  // Holds incoming data from Serial2
+  states state = WAITING_TO_START;
   while (true) {
-
     switch (state) {
       case WAITING_TO_START:
-        read_serial(doc);  // mutates doc
+        read_serial(doc);
         if (doc.isNull()) {
           continue;
         } else if (doc.containsKey("d")) {
-          Move sillyGuy;
-
           for (JsonObject obj : doc["d"].as<JsonArray>()) {
+            Move sillyGuy;
             sillyGuy.direction = obj["a"];
             sillyGuy.time = obj["t"];
+            sillyQueue->push(sillyGuy);
           }
-          // sillyGuy.direction = doc["d"][0]["a"];
-          // sillyGuy.time = doc["d"][0]["t"];
-          Serial.println(sillyGuy.direction);
-          Serial.println(sillyGuy.time);
-
-          sillyQueue->push(sillyGuy);
           state = DRIVING;
         }
         break;
       case DRIVING:
-        float motorSpeeds[4];
+        if (!sillyQueue->empty()) {
+          Move nextMove = sillyQueue->front();
+          sillyQueue->pop();
 
-        Move nextMove = sillyQueue->back();
-        sillyQueue->pop();
+          float motorSpeeds[4] = {0, 0, 0, 0}; // Initialize motor speeds
 
-        switch (nextMove.direction) {
-          case 1:  // forwards
-            wheelbase->computeWheelSpeeds(10, 0, 0, motorSpeeds);
-            break;
-          case 2:  // left
-            wheelbase->computeWheelSpeeds(0, -10, 0, motorSpeeds);
-            break;
-          case 3:  // backwards
-            wheelbase->computeWheelSpeeds(-10, 0, 0, motorSpeeds);
-            break;
-          case 4:  // right
-            wheelbase->computeWheelSpeeds(0, 10, 0, motorSpeeds);
-            break;
-          case 5:
-            smol_motors.setM1Speed(200);
-            break;
+          switch (nextMove.direction) {
+            case 1:  // forwards
+              wheelbase->computeWheelSpeeds(10, 0, 0, motorSpeeds);
+              break;
+            case 2:  // left
+              wheelbase->computeWheelSpeeds(0, -10, 0, motorSpeeds);
+              break;
+            case 3:  // backwards
+              wheelbase->computeWheelSpeeds(-10, 0, 0, motorSpeeds);
+              break;
+            case 4:  // right
+              wheelbase->computeWheelSpeeds(0, 10, 0, motorSpeeds);
+              break;
+            case 5:
+              smol_motors.setM1Speed(200);
+              delay(nextMove.time * 1000);
+              smol_motors.setM1Speed(0); // Stop motor after delay
+              continue;
             case 6:
-            smol_motors.setM2Speed(200);
-          default:
-            Serial.println("unexpected input in direction switch (line 86)");
-            Serial.println(nextMove.direction);
-            break;
+              smol_motors.setM2Speed(200);
+              delay(nextMove.time * 1000);
+              smol_motors.setM2Speed(0); // Stop motor after delay
+              continue;
+            default:
+              Serial.println("Unexpected input in direction switch");
+              Serial.println(nextMove.direction);
+              break;
+          }
+
+          // For directional moves, map speeds and set mecanum motor speeds
+          if (nextMove.direction >= 1 && nextMove.direction <= 4) {
+            for (int i = 0; i < 4; i++) {
+              motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -200, 200);
+              Serial.println(motorSpeeds[i]);
+            }
+            mecanum_motors.setSpeeds(motorSpeeds[0], motorSpeeds[1], motorSpeeds[2], motorSpeeds[3]);
+            delay(nextMove.time * 1000);
+            mecanum_motors.setSpeeds(0, 0, 0, 0); // Stop motors after delay
+          }
+        } else {
+          state = WAITING_TO_START; // Go back to waiting state if queue is empty
         }
-        for (int i = 0; i < 4; i++) {
-          motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -50, 50);
-          Serial.println(motorSpeeds[i]);
-        }
-        mecanum_motors.setSpeeds(motorSpeeds[0], motorSpeeds[1], motorSpeeds[2], motorSpeeds[3]);  //sets speeds of all 4 mecanum wheel motors
-        delay(nextMove.time * 1000);
         break;
     }
   }
