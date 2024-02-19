@@ -7,7 +7,7 @@
 #include <queue>
 #include "Wheelbase.h"
 
-const int NUMBER_OF_MOTORS = 4;
+const int NUMBER_OF_WHEELS = 4;
 
 using namespace std;
 
@@ -90,7 +90,7 @@ void read_serial(JsonDocument& doc) {
 }
 
 void driving_logic(queue<Move>* moveQueue) {
-  float motorSpeeds[NUMBER_OF_MOTORS];  // Initialize motor speeds
+  float motorSpeeds[NUMBER_OF_WHEELS];  // Initialize motor speeds
 
   Move nextMove = getNextMoveFromQueue(moveQueue);
   int time = nextMove.time;
@@ -159,7 +159,7 @@ void run_motors_with_blocking_delay(int delayTime, float* motorSpeeds, unsigned 
 }
 
 void map_motor_speeds(float* motorSpeeds, unsigned long maxSpeed) {
-  for (int i = 0; i < NUMBER_OF_MOTORS; i++) {
+  for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
     motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
     Serial.println(motorSpeeds[i]);
   }
