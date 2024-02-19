@@ -93,25 +93,25 @@ void driving_logic(queue<Move>* moveQueue, States& currentState) {
   switch (nextMove.direction) {
     case 1:  // forwards
       wheelbase->computeWheelSpeeds(10, 0, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, true, false);
+      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
       break;
     case 2:  // left
       wheelbase->computeWheelSpeeds(0, -10, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, true, false);
+      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
       break;
     case 3:  // backwards
       wheelbase->computeWheelSpeeds(-10, 0, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, true, false);
+      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
       break;
     case 4:  // right
       wheelbase->computeWheelSpeeds(0, 10, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, true, false);
+      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
       break;
-    case 5:
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, false, true);
+    case 5: // lift motor
+      run_motors_with_blocking_delay(nextMove, nullptr, true);
       break;
-    case 6:
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, false, false);
+    case 6: // belt motor
+      run_motors_with_blocking_delay(nextMove, nullptr, false);
       break;
     default:
       Serial.println("Unexpected input in direction switch");
@@ -120,10 +120,10 @@ void driving_logic(queue<Move>* moveQueue, States& currentState) {
   }
 }
 
-void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool mec_motors, bool lift_motor) {
+void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool lift_motor) {
 
 
-  if (mec_motors) {
+  if (motorSpeeds) {
     for (int i = 0; i < 4; i++) {
       motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -200, 200);
       Serial.println(motorSpeeds[i]);
@@ -139,7 +139,7 @@ void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool mec
 
   delay(nextMove.time);
 
-  if (mec_motors) {
+  if (motorSpeeds) {
     mecanum_motors.setSpeeds(0, 0, 0, 0);
   } else {
     if (lift_motor) {
