@@ -27,24 +27,27 @@ void setup() {
   obj4["a"] = 4;
   obj4["t"] = 1;
 
+  serializeJson(doc, sendingSerial);
 }
 
 void loop() {
-
-
   if (Serial.available() > 4) {
-    DeserializationError error = deserializeJson(doc, Serial);
-
-    if (error) {
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error.f_str());
-      doc.clear();
-    }
+    deserialize_from_serial_input();
   }
+}
 
+void deserialize_from_serial_input() {
+  DeserializationError error = deserializeJson(doc, Serial);
+
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
+    doc.clear();
+    return;
+  }
 
   WriteLoggingStream loggingStream(sendingSerial, Serial);
   serializeJson(doc, loggingStream);
   sendingSerial.println();
-  delay(1000);
+  return;
 }
