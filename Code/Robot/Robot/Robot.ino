@@ -130,7 +130,7 @@ void run_motors_with_blocking_delay(int delayTime, float* motorSpeeds, bool lift
 
   // if motorSpeeds is accessesed outside this if, a segfault will be issued :trollface:
   if (motorSpeeds) {
-    map_motor_speeds(motorSpeeds); // mutates motorSpeeds
+    map_motor_speeds(motorSpeeds, 200); // mutates motorSpeeds
     mecanum_motors.setSpeeds(motorSpeeds[0], motorSpeeds[1], motorSpeeds[2], motorSpeeds[3]);
   } else {
     if (lift_motor) {
@@ -154,9 +154,9 @@ void run_motors_with_blocking_delay(int delayTime, float* motorSpeeds, bool lift
   }
 }
 
-void map_motor_speeds(float* motorSpeeds) {
+void map_motor_speeds(float* motorSpeeds, unsigned long maxSpeed) {
   for (int i = 0; i < NUMBER_OF_MOTORS; i++) {
-    motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -200, 200);
+    motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
     Serial.println(motorSpeeds[i]);
   }
 }
