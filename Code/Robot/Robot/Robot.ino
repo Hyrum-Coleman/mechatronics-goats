@@ -9,8 +9,6 @@
 
 const int NUMBER_OF_WHEELS = 4;
 
-using namespace std;
-
 DualTB9051FTGMotorShieldMod3230 mecanum_motors;
 L298NMotorDriverMega smol_motors(5, 32, 33, 6, 34, 35);
 
