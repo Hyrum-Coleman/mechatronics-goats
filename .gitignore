@@ -37,4 +37,8 @@
 ~$*.SLDPRT
 ~$*.SLDASM
 
-Pins/~$Organized_Pin_Table.xlsx
+# Ignore excel system files
+~$*.xlsx
+
+# Ignore matalb autosave
+*.asv
