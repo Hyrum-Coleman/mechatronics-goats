@@ -90,29 +90,30 @@ void driving_logic(queue<Move>* moveQueue) {
   float wheelSpeeds[NUMBER_OF_WHEELS];  // Initialize motor speeds
 
   Move nextMove = getNextMoveFromQueue(moveQueue);
-  int time = nextMove.time;
+  int delayTime = nextMove.time;
+  int motorMax = 200;
   switch (nextMove.direction) {
     case 1:  // forwards
       wheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(time, wheelSpeeds, 200, false);
+      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 2:  // left
       wheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(time, wheelSpeeds, 200, false);
+      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 3:  // backwards
       wheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(time, wheelSpeeds, 200, false);
+      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 4:  // right
       wheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(time, wheelSpeeds, 200, false);
+      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 5:  // lift motor
-      runMotorsWithBlockingDelay(time, nullptr, 200, true);
+      runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, true);
       break;
     case 6:  // belt motor
-      runMotorsWithBlockingDelay(time, nullptr, 200, false);
+      runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, false);
       break;
     default:
       Serial.println("Unexpected input in direction switch");
