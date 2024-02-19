@@ -41,7 +41,7 @@ int main() {
 }
 
 void loop(JsonDocument doc) {
-  queue<Move>* moveQueue = new queue<Move>();
+  std::queue<Move>* moveQueue = new std::queue<Move>();
   States state = WAITING_TO_START;
   while (true) {
     switch (state) {
@@ -64,7 +64,7 @@ void loop(JsonDocument doc) {
   }
 }
 
-void deserializeDKeyIntoQueue(queue<Move>* moveQueue, JsonDocument& doc) {
+void deserializeDKeyIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
   for (JsonObject obj : doc["d"].as<JsonArray>()) {
     Move currentMove;
     currentMove.direction = obj["a"];
@@ -86,7 +86,7 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-void driving_logic(queue<Move>* moveQueue) {
+void driving_logic(std::queue<Move>* moveQueue) {
   float wheelSpeeds[NUMBER_OF_WHEELS];  // Initialize motor speeds
 
   Move nextMove = getNextMoveFromQueue(moveQueue);
@@ -122,7 +122,7 @@ void driving_logic(queue<Move>* moveQueue) {
   }
 }
 
-Move getNextMoveFromQueue(queue<Move>* queueToPopFrom) {
+Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
   Move retMove = queueToPopFrom->back();
   queueToPopFrom->pop();
   return retMove;
