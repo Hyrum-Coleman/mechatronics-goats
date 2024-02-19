@@ -53,12 +53,7 @@ void loop(JsonDocument doc) {
         if (doc.isNull()) {
           continue;
         } else if (doc.containsKey("d")) {
-          for (JsonObject obj : doc["d"].as<JsonArray>()) {
-            Move currentMove;
-            currentMove.direction = obj["a"];
-            currentMove.time = obj["t"];
-            moveQueue->push(currentMove);
-          }
+          deserializeDKeyIntoQueue(moveQueue, doc);
           state = DRIVING;
         }
         break;
@@ -69,6 +64,15 @@ void loop(JsonDocument doc) {
         driving_logic(moveQueue);
         break;
     }
+  }
+}
+
+void deserializeDKeyIntoQueue(queue<Move>* moveQueue, JsonDocument& doc) {
+  for (JsonObject obj : doc["d"].as<JsonArray>()) {
+    Move currentMove;
+    currentMove.direction = obj["a"];
+    currentMove.time = obj["t"];
+    moveQueue->push(currentMove);
   }
 }
 
@@ -86,32 +90,32 @@ void read_serial(JsonDocument& doc) {
 }
 
 void driving_logic(queue<Move>* moveQueue) {
-  float motorSpeeds[NUMBER_OF_MOTORS]; // Initialize motor speeds
+  float motorSpeeds[NUMBER_OF_MOTORS];  // Initialize motor speeds
 
   Move nextMove = getNextMoveFromQueue(moveQueue);
   int time = nextMove.time;
   switch (nextMove.direction) {
     case 1:  // forwards
       wheelbase->computeWheelSpeeds(10, 0, 0, motorSpeeds);
-      run_motors_with_blocking_delay(time, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, 200, false);
       break;
     case 2:  // left
       wheelbase->computeWheelSpeeds(0, -10, 0, motorSpeeds);
-      run_motors_with_blocking_delay(time, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, 200, false);
       break;
     case 3:  // backwards
       wheelbase->computeWheelSpeeds(-10, 0, 0, motorSpeeds);
-      run_motors_with_blocking_delay(time, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, 200, false);
       break;
     case 4:  // right
       wheelbase->computeWheelSpeeds(0, 10, 0, motorSpeeds);
-      run_motors_with_blocking_delay(time, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, 200, false);
       break;
     case 5:  // lift motor
-      run_motors_with_blocking_delay(time, nullptr, true);
+      run_motors_with_blocking_delay(time, nullptr, 200, true);
       break;
     case 6:  // belt motor
-      run_motors_with_blocking_delay(time, nullptr, false);
+      run_motors_with_blocking_delay(time, nullptr, 200, false);
       break;
     default:
       Serial.println("Unexpected input in direction switch");
@@ -126,17 +130,17 @@ Move getNextMoveFromQueue(queue<Move>* queueToPopFrom) {
   return retMove;
 }
 
-void run_motors_with_blocking_delay(int delayTime, float* motorSpeeds, bool lift_motor) {
+void run_motors_with_blocking_delay(int delayTime, float* motorSpeeds, unsigned long speed, bool lift_motor) {
 
   // if motorSpeeds is accessesed outside this if, a segfault will be issued :trollface:
   if (motorSpeeds) {
-    map_motor_speeds(motorSpeeds, 200); // mutates motorSpeeds
+    map_motor_speeds(motorSpeeds, speed);  // mutates motorSpeeds
     mecanum_motors.setSpeeds(motorSpeeds[0], motorSpeeds[1], motorSpeeds[2], motorSpeeds[3]);
   } else {
     if (lift_motor) {
-      smol_motors.setM1Speed(200);
+      smol_motors.setM1Speed(speed);
     } else {
-      smol_motors.setM2Speed(200);
+      smol_motors.setM2Speed(speed);
     }
   }
 
