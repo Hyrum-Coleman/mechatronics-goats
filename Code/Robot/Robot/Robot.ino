@@ -122,7 +122,7 @@ void driving_logic(queue<Move>* moveQueue, States& currentState) {
 
 void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool lift_motor) {
 
-
+  // if motorSpeeds is accessesed outside this if, a segfault will be issued :trollface:
   if (motorSpeeds) {
     for (int i = 0; i < 4; i++) {
       motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -200, 200);
