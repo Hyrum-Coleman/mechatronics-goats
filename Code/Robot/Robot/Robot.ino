@@ -19,7 +19,6 @@ struct Move {
   unsigned short time;
 };
 
-
 enum States {
   DRIVING = 0,
   WAITING_TO_START = 1,
