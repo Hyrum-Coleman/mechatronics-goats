@@ -85,8 +85,7 @@ void driving_logic(queue<Move>* moveQueue, States& currentState) {
     currentState = WAITING_TO_START;  // Go back to waiting state if queue is empty
   }
 
-  Move nextMove = moveQueue->front();
-  moveQueue->pop();
+  Move nextMove = getNextMoveFromQueue(moveQueue);
 
   float motorSpeeds[4] = { 0, 0, 0, 0 };  // Initialize motor speeds
 
@@ -143,9 +142,15 @@ void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool lif
     mecanum_motors.setSpeeds(0, 0, 0, 0);
   } else {
     if (lift_motor) {
-      smol_motors.setM1Speed(200);
+      smol_motors.setM1Speed(0);
     } else {
-      smol_motors.setM2Speed(200);
+      smol_motors.setM2Speed(0);
     }
   }
+}
+
+Move getNextMoveFromQueue(queue<Move>* queueToPopFrom) {
+  Move retMove = queueToPopFrom->back();
+  queueToPopFrom->pop();
+  return retMove;
 }
