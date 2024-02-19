@@ -7,6 +7,8 @@
 #include <queue>
 #include "Wheelbase.h"
 
+const int NUMBER_OF_MOTORS = 4;
+
 using namespace std;
 
 DualTB9051FTGMotorShieldMod3230 mecanum_motors;
@@ -61,7 +63,10 @@ void loop(JsonDocument doc) {
         }
         break;
       case DRIVING:
-        driving_logic(moveQueue, state);
+        if (moveQueue->empty()) {
+          state = WAITING_TO_START;  // Go back to waiting state if queue is empty
+        }
+        driving_logic(moveQueue);
         break;
     }
   }
@@ -80,37 +85,33 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-void driving_logic(queue<Move>* moveQueue, States& currentState) {
-  if (moveQueue->empty()) {
-    currentState = WAITING_TO_START;  // Go back to waiting state if queue is empty
-  }
+void driving_logic(queue<Move>* moveQueue) {
+  float motorSpeeds[NUMBER_OF_MOTORS]; // Initialize motor speeds
 
   Move nextMove = getNextMoveFromQueue(moveQueue);
-
-  float motorSpeeds[4] = { 0, 0, 0, 0 };  // Initialize motor speeds
-
+  int time = nextMove.time;
   switch (nextMove.direction) {
     case 1:  // forwards
       wheelbase->computeWheelSpeeds(10, 0, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, false);
       break;
     case 2:  // left
       wheelbase->computeWheelSpeeds(0, -10, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, false);
       break;
     case 3:  // backwards
       wheelbase->computeWheelSpeeds(-10, 0, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, false);
       break;
     case 4:  // right
       wheelbase->computeWheelSpeeds(0, 10, 0, motorSpeeds);
-      run_motors_with_blocking_delay(nextMove, motorSpeeds, false);
+      run_motors_with_blocking_delay(time, motorSpeeds, false);
       break;
-    case 5: // lift motor
-      run_motors_with_blocking_delay(nextMove, nullptr, true);
+    case 5:  // lift motor
+      run_motors_with_blocking_delay(time, nullptr, true);
       break;
-    case 6: // belt motor
-      run_motors_with_blocking_delay(nextMove, nullptr, false);
+    case 6:  // belt motor
+      run_motors_with_blocking_delay(time, nullptr, false);
       break;
     default:
       Serial.println("Unexpected input in direction switch");
@@ -119,14 +120,17 @@ void driving_logic(queue<Move>* moveQueue, States& currentState) {
   }
 }
 
-void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool lift_motor) {
+Move getNextMoveFromQueue(queue<Move>* queueToPopFrom) {
+  Move retMove = queueToPopFrom->back();
+  queueToPopFrom->pop();
+  return retMove;
+}
+
+void run_motors_with_blocking_delay(int delayTime, float* motorSpeeds, bool lift_motor) {
 
   // if motorSpeeds is accessesed outside this if, a segfault will be issued :trollface:
   if (motorSpeeds) {
-    for (int i = 0; i < 4; i++) {
-      motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -200, 200);
-      Serial.println(motorSpeeds[i]);
-    }
+    map_motor_speeds(motorSpeeds); // mutates motorSpeeds
     mecanum_motors.setSpeeds(motorSpeeds[0], motorSpeeds[1], motorSpeeds[2], motorSpeeds[3]);
   } else {
     if (lift_motor) {
@@ -136,8 +140,9 @@ void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool lif
     }
   }
 
-  delay(nextMove.time);
+  delay(delayTime * 1000);
 
+  // turns off motors after delay
   if (motorSpeeds) {
     mecanum_motors.setSpeeds(0, 0, 0, 0);
   } else {
@@ -149,8 +154,9 @@ void run_motors_with_blocking_delay(Move& nextMove, float* motorSpeeds, bool lif
   }
 }
 
-Move getNextMoveFromQueue(queue<Move>* queueToPopFrom) {
-  Move retMove = queueToPopFrom->back();
-  queueToPopFrom->pop();
-  return retMove;
+void map_motor_speeds(float* motorSpeeds) {
+  for (int i = 0; i < NUMBER_OF_MOTORS; i++) {
+    motorSpeeds[i] = map(motorSpeeds[i], -3.91, 3.91, -200, 200);
+    Serial.println(motorSpeeds[i]);
+  }
 }
