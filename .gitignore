@@ -36,3 +36,9 @@
 # Ignore Solidworks System files
 ~$*.SLDPRT
 ~$*.SLDASM
+
+# Ignore excel system files
+~$*.xlsx
+
+# Ignore matalb autosave
+*.asv
