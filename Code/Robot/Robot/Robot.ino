@@ -31,23 +31,24 @@ int main() {
   Serial2.setTimeout(10000);
 
   JsonDocument doc;
-  std::queue<Move>* moveQueue = new std::queue<Move>(); // Allocate here
 
   mecanum_motors.init();
   mecanum_motors.enableDrivers();
 
   smol_motors.init();
 
-  loop(doc, moveQueue);
+  loop(doc);
 }
 
-void loop(JsonDocument doc, std::queue<Move>* moveQueue) {
+void loop(JsonDocument doc) {
+  std::queue<Move>* moveQueue = new std::queue<Move>();
   States state = WAITING_TO_START;
+
+  // LOOP BEGINS
   while (true) {
     switch (state) {
       case WAITING_TO_START:
         Serial2.println("WAITING TO START");
-
         read_serial(doc);
         if (doc.isNull()) {
           continue;
