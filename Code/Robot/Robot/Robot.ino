@@ -14,7 +14,7 @@
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
-#include <DualTB9051FTGMotorShieldMod3230.h>
+#include "DualTB9051FTGMotorShieldMod3230.h"
 #include <L298NMotorDriverMega.h>
 #include <queue>
 #include "Wheelbase.h"
@@ -123,7 +123,7 @@ void driving_logic(std::queue<Move>* moveQueue) {
 
   Move nextMove = getNextMoveFromQueue(moveQueue);
   int delayTime = nextMove.time;
-  int motorMax = 200;
+  int motorMax = 400;
   switch (nextMove.direction) {
     debugPrint("NEXTMOVE.DIRECTION: ");
     debugPrintln(nextMove.direction);
@@ -192,7 +192,9 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
     }
     debugPrintln(""); // New line after printing all speeds
 
-    mecanum_motors.setSpeeds(wheelSpeeds[0], wheelSpeeds[1], wheelSpeeds[2], wheelSpeeds[3]);
+    // Negative signs are to account for polarity of motors. Motors are wired to positive goes to A and negative to B
+    mecanum_motors.setSpeeds(wheelSpeeds[0], -wheelSpeeds[1], wheelSpeeds[2], -wheelSpeeds[3]);
+
   } else {
     if (lift_motor) {
       smol_motors.setM1Speed(speed);

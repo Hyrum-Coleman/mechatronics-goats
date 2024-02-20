@@ -17,9 +17,6 @@ void setup() {
   JsonObject obj2 = arr.createNestedObject();
   obj2["a"] = 2;
   obj2["t"] = 1;
-  JsonObject obj = arr.createNestedObject();
-  obj["a"] = 5;
-  obj["t"] = 1;
   JsonObject obj3 = arr.createNestedObject();
   obj3["a"] = 3;
   obj3["t"] = 1;
