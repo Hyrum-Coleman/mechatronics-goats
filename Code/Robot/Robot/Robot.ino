@@ -18,6 +18,7 @@
 #include <L298NMotorDriverMega.h>
 #include <queue>
 #include "Wheelbase.h"
+#include "L298NMotorDriver.h"
 
 
 // Global variables :(
@@ -25,6 +26,7 @@ const int NUMBER_OF_WHEELS = 4;
 
 DualTB9051FTGMotorShieldMod3230 mecanum_motors;
 L298NMotorDriverMega smol_motors(5, 32, 33, 6, 34, 35);
+//L298NMotorDriver small_motors(34,32,33,35,5,6);
 
 Wheelbase* wheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 
@@ -51,6 +53,7 @@ int main() {
   mecanum_motors.enableDrivers();
 
   smol_motors.init();
+  //small_motors.init();
 
   loop(doc);
 }
@@ -209,9 +212,17 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
 
   } else {
     if (lift_motor) {
-      smol_motors.setM1Speed(speed);
+      debugPrint("Setting M1 speed to ");
+      debugPrintln(speed);
+
+      smol_motors.setM1Speed(200);
+      //small_motors.setMotorA(255, true);
     } else {
-      smol_motors.setM2Speed(speed);
+      debugPrint("Setting M2 speed to ");
+      debugPrintln(speed);
+      
+      smol_motors.setM2Speed(200);
+      //small_motors.setMotorB(255, true);
     }
   }
 
@@ -222,9 +233,11 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
     mecanum_motors.setSpeeds(0, 0, 0, 0);
   } else {
     if (lift_motor) {
-      smol_motors.setM1Speed(0);
+      smol_motors.setM1Brake(0);
+    //small_motors.stopMotorA();
     } else {
-      smol_motors.setM2Speed(0);
+      smol_motors.setM2Brake(0);
+    //small_motors.stopMotorB();
     }
   }
 }

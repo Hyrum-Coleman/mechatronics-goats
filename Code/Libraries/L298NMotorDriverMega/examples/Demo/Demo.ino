@@ -9,12 +9,12 @@
 
 // INX can use any digital pin (doesn't have to be PWM).
 
-const int ENA = 45; 
-const int IN1 = 6;
-const int IN2 = 7;
-const int ENB = 46;
-const int IN3 = 9;
-const int IN4 = 8;
+const int ENA = 5; 
+const int IN1 = 34;
+const int IN2 = 32;
+const int ENB = 6;
+const int IN3 = 33;
+const int IN4 = 35;
 
 L298NMotorDriverMega md(ENA,IN1,IN2,ENB,IN3,IN4); // create object for motor driver
 
