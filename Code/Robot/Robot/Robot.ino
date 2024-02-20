@@ -2,8 +2,8 @@
 #define DEBUG_PRINTS_ENABLED true
 
 #if DEBUG_PRINTS_ENABLED
-#define debugPrint(x)  Serial2.print(x)
-#define debugPrintln(x)  Serial2.println(x)
+#define debugPrint(x) Serial2.print(x)
+#define debugPrintln(x) Serial2.println(x)
 #else
 #define debugPrint(x)
 #define debugPrintln(x)
@@ -75,7 +75,7 @@ void loop(JsonDocument doc) {
         }
         break;
       case DRIVING:
-      debugPrintln("JUST ENTERED DRIVING STATE");
+        debugPrintln("JUST ENTERED DRIVING STATE");
         if (moveQueue->empty()) {
           debugPrintln("MOVEQUEUE EMPTY.");
           state = WAITING_TO_START;  // Go back to waiting state if queue is empty
@@ -127,32 +127,44 @@ void driving_logic(std::queue<Move>* moveQueue) {
   switch (nextMove.direction) {
     debugPrint("NEXTMOVE.DIRECTION: ");
     debugPrintln(nextMove.direction);
-    
+
     case 1:  // forwards
       debugPrintln("Driving: Forwards");
-      wheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
+      wheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 2:  // left
       debugPrintln("Driving: Left");
-      wheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
+      wheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 3:  // backwards
       debugPrintln("Driving: Backwards");
-      wheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
+      wheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 4:  // right
       debugPrintln("Driving: Right");
-      wheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
+      wheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case 5:  // lift motor
+    case 5:  // rotate ccw
+      debugPrintln("Driving: rotate ccw");
+      // Rotations are more sensitive. I hand calculated 1.059 to match our map scale
+      wheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
+      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
+      break;
+    case 6:  // rotate cw
+      debugPrintln("Driving: rotate cw");
+      // Rotations are more sensitive. I hand calculated 1.059 to match our map scale
+      wheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
+      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
+      break;
+    case 7:  // lift motor
       debugPrintln("Driving: lift motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, true);
       break;
-    case 6:  // belt motor
+    case 8:  // belt motor
       debugPrintln("Driving: belt motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, false);
       break;
@@ -178,19 +190,19 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
   if (wheelSpeeds) {
     debugPrint("Wheel Speeds before mapping: ");
     for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
-        debugPrint(wheelSpeeds[i]);
-        debugPrint(" "); // Space between values for readability
+      debugPrint(wheelSpeeds[i]);
+      debugPrint(" ");  // Space between values for readability
     }
 
-    debugPrintln(""); // New line after printing all speeds
+    debugPrintln("");                    // New line after printing all speeds
     mapWheelSpeeds(wheelSpeeds, speed);  // mutates motorSpeeds
 
     debugPrint("Wheel Speeds after mapping: ");
     for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
-        debugPrint(wheelSpeeds[i]);
-        debugPrint(" "); // Space between values for readability
+      debugPrint(wheelSpeeds[i]);
+      debugPrint(" ");  // Space between values for readability
     }
-    debugPrintln(""); // New line after printing all speeds
+    debugPrintln("");  // New line after printing all speeds
 
     // Negative signs are to account for polarity of motors. Motors are wired to positive goes to A and negative to B
     mecanum_motors.setSpeeds(wheelSpeeds[0], -wheelSpeeds[1], wheelSpeeds[2], -wheelSpeeds[3]);
@@ -222,5 +234,4 @@ void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
   for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
     wheelSpeeds[i] = map(wheelSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
   }
-
 }

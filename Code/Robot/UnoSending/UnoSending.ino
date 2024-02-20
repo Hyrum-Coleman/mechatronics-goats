@@ -23,6 +23,18 @@ void setup() {
   JsonObject obj4 = arr.createNestedObject();
   obj4["a"] = 4;
   obj4["t"] = 1;
+  JsonObject obj5 = arr.createNestedObject();
+  obj5["a"] = 5;
+  obj5["t"] = 1;
+  JsonObject obj6 = arr.createNestedObject();
+  obj6["a"] = 6;
+  obj6["t"] = 1;
+  JsonObject obj7 = arr.createNestedObject();
+  obj7["a"] = 7;
+  obj7["t"] = 1;
+  JsonObject obj8 = arr.createNestedObject();
+  obj8["a"] = 8;
+  obj8["t"] = 1;
 
   serializeJson(doc, sendingSerial);
 }
