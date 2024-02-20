@@ -31,22 +31,22 @@ int main() {
   Serial2.setTimeout(10000);
 
   JsonDocument doc;
+  std::queue<Move>* moveQueue = new std::queue<Move>(); // Allocate here
 
   mecanum_motors.init();
   mecanum_motors.enableDrivers();
 
   smol_motors.init();
 
-  loop(doc);
+  loop(doc, moveQueue);
 }
 
-void loop(JsonDocument doc) {
-  std::queue<Move>* moveQueue = new std::queue<Move>();
+void loop(JsonDocument doc, std::queue<Move>* moveQueue) {
   States state = WAITING_TO_START;
   while (true) {
     switch (state) {
       case WAITING_TO_START:
-        Serial2.println("Waiting to start");
+        Serial2.println("WAITING TO START");
 
         read_serial(doc);
         if (doc.isNull()) {
@@ -57,8 +57,11 @@ void loop(JsonDocument doc) {
         }
         break;
       case DRIVING:
+      Serial2.println("JUST ENTERED DRIVING STATE");
         if (moveQueue->empty()) {
+          Serial2.println("MOVEQUEUE EMPTY.");
           state = WAITING_TO_START;  // Go back to waiting state if queue is empty
+          Serial2.println("STATE SET TO WAITING TO START!");
         }
         driving_logic(moveQueue);
         break;
@@ -96,25 +99,31 @@ void driving_logic(std::queue<Move>* moveQueue) {
   int motorMax = 200;
   switch (nextMove.direction) {
     case 1:  // forwards
+      Serial2.println("Driving: Forwards");
       wheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 2:  // left
+      Serial2.println("Driving: Left");
       wheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 3:  // backwards
+      Serial2.println("Driving: Backwards");
       wheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 4:  // right
+      Serial2.println("Driving: Right");
       wheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 5:  // lift motor
+      Serial2.println("Driving: lift motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, true);
       break;
     case 6:  // belt motor
+      Serial2.println("Driving: belt motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, false);
       break;
     default:
