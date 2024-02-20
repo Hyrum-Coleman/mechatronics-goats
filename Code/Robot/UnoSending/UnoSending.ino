@@ -14,7 +14,7 @@ void setup() {
   JsonObject obj1 = arr.createNestedObject();
   obj1["a"] = 1;
   obj1["t"] = 1;
-  /*JsonObject obj2 = arr.createNestedObject();
+  JsonObject obj2 = arr.createNestedObject();
   obj2["a"] = 2;
   obj2["t"] = 1;
   JsonObject obj = arr.createNestedObject();
@@ -25,7 +25,7 @@ void setup() {
   obj3["t"] = 1;
   JsonObject obj4 = arr.createNestedObject();
   obj4["a"] = 4;
-  obj4["t"] = 1;*/
+  obj4["t"] = 1;
 
   serializeJson(doc, sendingSerial);
 }

@@ -53,7 +53,9 @@ void loop(JsonDocument doc) {
         if (doc.isNull()) {
           continue;
         } else if (doc.containsKey("d")) {
+          Serial2.println("ABOUT TO DESERIALIZE D KEY");
           deserializeDKeyIntoQueue(moveQueue, doc);
+          Serial2.println("DONE DESERIALIZING");
           state = DRIVING;
         }
         break;
@@ -63,6 +65,7 @@ void loop(JsonDocument doc) {
           Serial2.println("MOVEQUEUE EMPTY.");
           state = WAITING_TO_START;  // Go back to waiting state if queue is empty
           Serial2.println("STATE SET TO WAITING TO START!");
+          break;
         }
         driving_logic(moveQueue);
         break;
@@ -76,7 +79,15 @@ void deserializeDKeyIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
     currentMove.direction = obj["a"];
     currentMove.time = obj["t"];
     moveQueue->push(currentMove);
+
+    Serial2.print("Pushed Move - Direction: ");
+    Serial2.print(currentMove.direction);
+    Serial2.print(", Time: ");
+    Serial2.println(currentMove.time);
   }
+
+  Serial2.print("Total Moves in Queue: ");
+  Serial2.println(moveQueue->size());
 }
 
 void read_serial(JsonDocument& doc) {
@@ -99,6 +110,9 @@ void driving_logic(std::queue<Move>* moveQueue) {
   int delayTime = nextMove.time;
   int motorMax = 200;
   switch (nextMove.direction) {
+    Serial2.print("NEXTMOVE.DIRECTION: ");
+    Serial2.println(nextMove.direction);
+    
     case 1:  // forwards
       Serial2.println("Driving: Forwards");
       wheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
@@ -135,8 +149,14 @@ void driving_logic(std::queue<Move>* moveQueue) {
 }
 
 Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
-  Move retMove = queueToPopFrom->back();
+  Move retMove = queueToPopFrom->front();
+  //Move retMove = queueToPopFrom->back();
+
+  Serial2.print("Queue size before popping: ");
+  Serial2.println(queueToPopFrom->size());
   queueToPopFrom->pop();
+  Serial2.print("Queue size after popping: ");
+  Serial2.println(queueToPopFrom->size());
   return retMove;
 }
 
