@@ -46,6 +46,8 @@ void loop(JsonDocument doc) {
   while (true) {
     switch (state) {
       case WAITING_TO_START:
+        Serial2.println("Waiting to start");
+
         read_serial(doc);
         if (doc.isNull()) {
           continue;
