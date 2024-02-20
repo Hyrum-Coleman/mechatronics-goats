@@ -1,3 +1,15 @@
+// Enable or disable debug prints
+#define DEBUG_PRINTS_ENABLED true
+
+#if DEBUG_PRINTS_ENABLED
+#define debugPrint(x)  Serial2.print(x)
+#define debugPrintln(x)  Serial2.println(x)
+#else
+#define debugPrint(x)
+#define debugPrintln(x)
+#endif
+
+// Include dependencies
 #include <Arduino.h>
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
@@ -7,6 +19,8 @@
 #include <queue>
 #include "Wheelbase.h"
 
+
+// Global variables :(
 const int NUMBER_OF_WHEELS = 4;
 
 DualTB9051FTGMotorShieldMod3230 mecanum_motors;
@@ -14,6 +28,7 @@ L298NMotorDriverMega smol_motors(5, 32, 33, 6, 34, 35);
 
 Wheelbase* wheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 
+// Structs and enums
 struct Move {
   unsigned short direction;
   unsigned short time;
@@ -48,23 +63,23 @@ void loop(JsonDocument doc) {
   while (true) {
     switch (state) {
       case WAITING_TO_START:
-        Serial2.println("WAITING TO START");
+        debugPrintln("WAITING TO START");
         read_serial(doc);
         if (doc.isNull()) {
           continue;
         } else if (doc.containsKey("d")) {
-          Serial2.println("ABOUT TO DESERIALIZE D KEY");
+          debugPrintln("ABOUT TO DESERIALIZE D KEY");
           deserializeDKeyIntoQueue(moveQueue, doc);
-          Serial2.println("DONE DESERIALIZING");
+          debugPrintln("DONE DESERIALIZING");
           state = DRIVING;
         }
         break;
       case DRIVING:
-      Serial2.println("JUST ENTERED DRIVING STATE");
+      debugPrintln("JUST ENTERED DRIVING STATE");
         if (moveQueue->empty()) {
-          Serial2.println("MOVEQUEUE EMPTY.");
+          debugPrintln("MOVEQUEUE EMPTY.");
           state = WAITING_TO_START;  // Go back to waiting state if queue is empty
-          Serial2.println("STATE SET TO WAITING TO START!");
+          debugPrintln("STATE SET TO WAITING TO START!");
           break;
         }
         driving_logic(moveQueue);
@@ -80,14 +95,14 @@ void deserializeDKeyIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
     currentMove.time = obj["t"];
     moveQueue->push(currentMove);
 
-    Serial2.print("Pushed Move - Direction: ");
-    Serial2.print(currentMove.direction);
-    Serial2.print(", Time: ");
-    Serial2.println(currentMove.time);
+    debugPrint("Pushed Move - Direction: ");
+    debugPrint(currentMove.direction);
+    debugPrint(", Time: ");
+    debugPrintln(currentMove.time);
   }
 
-  Serial2.print("Total Moves in Queue: ");
-  Serial2.println(moveQueue->size());
+  debugPrint("Total Moves in Queue: ");
+  debugPrintln(moveQueue->size());
 }
 
 void read_serial(JsonDocument& doc) {
@@ -110,40 +125,40 @@ void driving_logic(std::queue<Move>* moveQueue) {
   int delayTime = nextMove.time;
   int motorMax = 200;
   switch (nextMove.direction) {
-    Serial2.print("NEXTMOVE.DIRECTION: ");
-    Serial2.println(nextMove.direction);
+    debugPrint("NEXTMOVE.DIRECTION: ");
+    debugPrintln(nextMove.direction);
     
     case 1:  // forwards
-      Serial2.println("Driving: Forwards");
+      debugPrintln("Driving: Forwards");
       wheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 2:  // left
-      Serial2.println("Driving: Left");
+      debugPrintln("Driving: Left");
       wheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 3:  // backwards
-      Serial2.println("Driving: Backwards");
+      debugPrintln("Driving: Backwards");
       wheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 4:  // right
-      Serial2.println("Driving: Right");
+      debugPrintln("Driving: Right");
       wheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
     case 5:  // lift motor
-      Serial2.println("Driving: lift motor");
+      debugPrintln("Driving: lift motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, true);
       break;
     case 6:  // belt motor
-      Serial2.println("Driving: belt motor");
+      debugPrintln("Driving: belt motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, false);
       break;
     default:
-      Serial.println("Unexpected input in direction switch");
-      Serial.println(nextMove.direction);
+      debugPrint("Unexpected input in direction switch: ");
+      debugPrintln(nextMove.direction);
       break;
   }
 }
@@ -152,11 +167,8 @@ Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
   Move retMove = queueToPopFrom->front();
   //Move retMove = queueToPopFrom->back();
 
-  Serial2.print("Queue size before popping: ");
-  Serial2.println(queueToPopFrom->size());
   queueToPopFrom->pop();
-  Serial2.print("Queue size after popping: ");
-  Serial2.println(queueToPopFrom->size());
+
   return retMove;
 }
 
@@ -164,7 +176,22 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
 
   // if motorSpeeds is accessesed outside this if, a segfault will be issued :trollface:
   if (wheelSpeeds) {
+    debugPrint("Wheel Speeds before mapping: ");
+    for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
+        debugPrint(wheelSpeeds[i]);
+        debugPrint(" "); // Space between values for readability
+    }
+
+    debugPrintln(""); // New line after printing all speeds
     mapWheelSpeeds(wheelSpeeds, speed);  // mutates motorSpeeds
+
+    debugPrint("Wheel Speeds after mapping: ");
+    for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
+        debugPrint(wheelSpeeds[i]);
+        debugPrint(" "); // Space between values for readability
+    }
+    debugPrintln(""); // New line after printing all speeds
+
     mecanum_motors.setSpeeds(wheelSpeeds[0], wheelSpeeds[1], wheelSpeeds[2], wheelSpeeds[3]);
   } else {
     if (lift_motor) {
@@ -189,8 +216,9 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
 }
 
 void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
+
   for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
     wheelSpeeds[i] = map(wheelSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
-    Serial.println(wheelSpeeds[i]);
   }
+
 }
