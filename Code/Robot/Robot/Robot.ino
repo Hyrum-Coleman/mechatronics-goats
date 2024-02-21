@@ -53,15 +53,15 @@ enum Directions {
   eBelt = 8,
 };
 
-JsonDocument gDoc;
+//JsonDocument gDoc; // from when we were trying no int main() approach
 
-void setup() {
-  // init();  // Initialize board
+int main() {
+  init();  // Initialize board
   Serial.begin(9600);
   Serial2.begin(9600);
   Serial2.setTimeout(10000);
 
-  // JsonDocument doc;
+  JsonDocument doc;
 
   gMecanumMotors.init();
   gMecanumMotors.enableDrivers();
@@ -69,10 +69,10 @@ void setup() {
   gSmolMotors.init();
   //small_motors.init();
 
-  // loop(doc);
+  loop(doc);
 }
 
-void loop() {
+void loop(JsonDocument& doc) {
   std::queue<Move>* moveQueue = new std::queue<Move>();
   States state = eWaitingToStart;
 
@@ -81,12 +81,12 @@ void loop() {
     switch (state) {
       case eWaitingToStart:
         DEBUG_PRINTLN("WAITING TO START");
-        read_serial(gDoc);
-        if (gDoc.isNull()) {
+        read_serial(doc);
+        if (doc.isNull()) {
           continue;
-        } else if (gDoc.containsKey("d")) {
+        } else if (doc.containsKey("d")) {
           DEBUG_PRINTLN("ABOUT TO DESERIALIZE D KEY");
-          deserializeDKeyIntoQueue(moveQueue, gDoc);
+          deserializeDKeyIntoQueue(moveQueue, doc);
           DEBUG_PRINTLN("DONE DESERIALIZING");
           state = eDriving;
         }
