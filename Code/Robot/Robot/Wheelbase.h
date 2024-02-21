@@ -56,7 +56,7 @@ public:
   }
   */
 
-  void computeWheelSpeeds(float vx, float vy, float omega, float wheelSpeeds[4]) {
+  void computeWheelSpeeds(float vx, float vy, float omega, float wheelSpeeds[4]) const {
     // Compute the factor (Lx + Ly)
     float factor = Lx + Ly;
 
@@ -90,7 +90,7 @@ public:
   }*/
 
   // UNTESTED
-  void computeVelocities(float wheelSpeeds[4], float &vx, float &vy, float &omega) {
+  void computeVelocities(float wheelSpeeds[4], float &vx, float &vy, float &omega) const {
     // Compute the factor (Lx + Ly)
     float factor = Lx + Ly;
 
@@ -104,7 +104,6 @@ public:
     vx = (r / 4) * (wheelSpeeds[0] - wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]);
     omega = (r / (4 * factor)) * (wheelSpeeds[0] - wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]);
   }
-
 };
 
 #endif  // WHEELBASE_H
