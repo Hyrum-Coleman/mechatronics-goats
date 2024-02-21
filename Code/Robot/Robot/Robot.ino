@@ -14,8 +14,8 @@
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
-#include <DualTB9051FTGMotorShieldBarebones.h>
-//#include <DualTB9051FTGMotorShieldMod3230.h>
+//#include <DualTB9051FTGMotorShieldBarebones.h>
+#include <DualTB9051FTGMotorShieldMod3230.h>
 #include <L298NMotorDriverMega.h>
 #include <queue>
 #include "Wheelbase.h"
@@ -25,7 +25,7 @@
 // Global variables :(
 const int NUMBER_OF_WHEELS = 4;
 
-DualTB9051FTGMotorShieldBarebones mecanum_motors;
+DualTB9051FTGMotorShieldMod3230 mecanum_motors;
 L298NMotorDriverMega smol_motors(5, 32, 33, 6, 34, 35);
 //L298NMotorDriver small_motors(34,32,33,35,5,6);
 
