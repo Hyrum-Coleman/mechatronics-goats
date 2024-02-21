@@ -2,11 +2,11 @@
 #define DEBUG_PRINTS_ENABLED true
 
 #if DEBUG_PRINTS_ENABLED
-#define debugPrint(x) Serial2.print(x)
-#define debugPrintln(x) Serial2.println(x)
+#define DEBUG_PRINT(x) (Serial2.print(x))
+#define DEBUG_PRINTLN(x) (Serial2.println(x))
 #else
-#define debugPrint(x)
-#define debugPrintln(x)
+#define DEBUG_PRINT(x)
+#define DEBUG_PRINTLN(x)
 #endif
 
 // Include dependencies
@@ -23,13 +23,13 @@
 
 
 // Global variables :(
-const int NUMBER_OF_WHEELS = 4;
+const int cNumberOfWheels = 4;
 
-DualTB9051FTGMotorShieldMod3230 mecanum_motors;
-L298NMotorDriverMega smol_motors(5, 32, 33, 6, 34, 35);
+DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
+L298NMotorDriverMega gSmolMotors(5, 32, 33, 6, 34, 35);
 //L298NMotorDriver small_motors(34,32,33,35,5,6);
 
-Wheelbase* wheelbase = new Wheelbase(5.0625, 4.386, 2.559);
+Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 
 // Structs and enums
 struct Move {
@@ -38,8 +38,19 @@ struct Move {
 };
 
 enum States {
-  DRIVING = 0,
-  WAITING_TO_START = 1,
+  eDriving = 0,
+  eWaitingToStart = 1,
+};
+
+enum Directions {
+  eForwards = 1,
+  eLeft = 2,
+  eBackwards = 3,
+  eRight = 4,
+  eCCW = 5,
+  eCW = 6,
+  eLift = 7,
+  eBelt = 8,
 };
 
 int main() {
@@ -50,10 +61,10 @@ int main() {
 
   JsonDocument doc;
 
-  mecanum_motors.init();
-  mecanum_motors.enableDrivers();
+  gMecanumMotors.init();
+  gMecanumMotors.enableDrivers();
 
-  smol_motors.init();
+  gSmolMotors.init();
   //small_motors.init();
 
   loop(doc);
@@ -61,29 +72,29 @@ int main() {
 
 void loop(JsonDocument doc) {
   std::queue<Move>* moveQueue = new std::queue<Move>();
-  States state = WAITING_TO_START;
+  States state = eWaitingToStart;
 
   // LOOP BEGINS
   while (true) {
     switch (state) {
-      case WAITING_TO_START:
-        debugPrintln("WAITING TO START");
+      case eWaitingToStart:
+        DEBUG_PRINTLN("WAITING TO START");
         read_serial(doc);
         if (doc.isNull()) {
           continue;
         } else if (doc.containsKey("d")) {
-          debugPrintln("ABOUT TO DESERIALIZE D KEY");
+          DEBUG_PRINTLN("ABOUT TO DESERIALIZE D KEY");
           deserializeDKeyIntoQueue(moveQueue, doc);
-          debugPrintln("DONE DESERIALIZING");
-          state = DRIVING;
+          DEBUG_PRINTLN("DONE DESERIALIZING");
+          state = eDriving;
         }
         break;
-      case DRIVING:
-        debugPrintln("JUST ENTERED DRIVING STATE");
+      case eDriving:
+        DEBUG_PRINTLN("JUST ENTERED DRIVING STATE");
         if (moveQueue->empty()) {
-          debugPrintln("MOVEQUEUE EMPTY.");
-          state = WAITING_TO_START;  // Go back to waiting state if queue is empty
-          debugPrintln("STATE SET TO WAITING TO START!");
+          DEBUG_PRINTLN("MOVEQUEUE EMPTY.");
+          state = eWaitingToStart;  // Go back to waiting state if queue is empty
+          DEBUG_PRINTLN("STATE SET TO WAITING TO START!");
           break;
         }
         driving_logic(moveQueue);
@@ -99,14 +110,14 @@ void deserializeDKeyIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
     currentMove.time = obj["t"];
     moveQueue->push(currentMove);
 
-    debugPrint("Pushed Move - Direction: ");
-    debugPrint(currentMove.direction);
-    debugPrint(", Time: ");
-    debugPrintln(currentMove.time);
+    DEBUG_PRINT("Pushed Move - Direction: ");
+    DEBUG_PRINT(currentMove.direction);
+    DEBUG_PRINT(", Time: ");
+    DEBUG_PRINTLN(currentMove.time);
   }
 
-  debugPrint("Total Moves in Queue: ");
-  debugPrintln(moveQueue->size());
+  DEBUG_PRINT("Total Moves in Queue: ");
+  DEBUG_PRINTLN(moveQueue->size());
 }
 
 void read_serial(JsonDocument& doc) {
@@ -123,58 +134,58 @@ void read_serial(JsonDocument& doc) {
 }
 
 void driving_logic(std::queue<Move>* moveQueue) {
-  float wheelSpeeds[NUMBER_OF_WHEELS];  // Initialize motor speeds
+  float wheelSpeeds[cNumberOfWheels];  // Initialize motor speeds
 
   Move nextMove = getNextMoveFromQueue(moveQueue);
   int delayTime = nextMove.time;
   int motorMax = 400;
-  switch (nextMove.direction) {
-    debugPrint("NEXTMOVE.DIRECTION: ");
-    debugPrintln(nextMove.direction);
+  switch ((Directions)nextMove.direction) {
+    DEBUG_PRINT("NEXTMOVE.DIRECTION: ");
+    DEBUG_PRINTLN(nextMove.direction);
 
-    case 1:  // forwards
-      debugPrintln("Driving: Forwards");
-      wheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
+    case eForwards:  // forwards
+      DEBUG_PRINTLN("Driving: Forwards");
+      gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case 2:  // left
-      debugPrintln("Driving: Left");
-      wheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
+    case eLeft:  // left
+      DEBUG_PRINTLN("Driving: Left");
+      gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case 3:  // backwards
-      debugPrintln("Driving: Backwards");
-      wheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
+    case eBackwards:  // backwards
+      DEBUG_PRINTLN("Driving: Backwards");
+      gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case 4:  // right
-      debugPrintln("Driving: Right");
-      wheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
+    case eRight:  // right
+      DEBUG_PRINTLN("Driving: Right");
+      gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case 5:  // rotate ccw
-      debugPrintln("Driving: rotate ccw");
+    case eCCW:  // rotate ccw
+      DEBUG_PRINTLN("Driving: rotate ccw");
       // Rotations are more sensitive. I hand calculated 1.059 to match our map scale
-      wheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
+      gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case 6:  // rotate cw
-      debugPrintln("Driving: rotate cw");
+    case eCW:  // rotate cw
+      DEBUG_PRINTLN("Driving: rotate cw");
       // Rotations are more sensitive. I hand calculated 1.059 to match our map scale
-      wheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
+      gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case 7:  // lift motor
-      debugPrintln("Driving: lift motor");
+    case eLift:  // lift motor
+      DEBUG_PRINTLN("Driving: lift motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, true);
       break;
-    case 8:  // belt motor
-      debugPrintln("Driving: belt motor");
+    case eBelt:  // belt motor
+      DEBUG_PRINTLN("Driving: belt motor");
       runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, false);
       break;
     default:
-      debugPrint("Unexpected input in direction switch: ");
-      debugPrintln(nextMove.direction);
+      DEBUG_PRINT("Unexpected input in direction switch: ");
+      DEBUG_PRINTLN(nextMove.direction);
       break;
   }
 }
@@ -192,43 +203,43 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
 
   // if motorSpeeds is accessesed outside this if, a segfault will be issued :trollface:
   if (wheelSpeeds) {
-    debugPrint("Wheel Speeds before mapping: ");
-    for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
-      debugPrint(wheelSpeeds[i]);
-      debugPrint(" ");  // Space between values for readability
+    DEBUG_PRINT("Wheel Speeds before mapping: ");
+    for (int i = 0; i < cNumberOfWheels; i++) {
+      DEBUG_PRINT(wheelSpeeds[i]);
+      DEBUG_PRINT(" ");  // Space between values for readability
     }
 
-    debugPrintln("");                    // New line after printing all speeds
+    DEBUG_PRINTLN("");                    // New line after printing all speeds
     mapWheelSpeeds(wheelSpeeds, speed);  // mutates motorSpeeds
 
-    debugPrint("Wheel Speeds after mapping: ");
-    for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
-      debugPrint(wheelSpeeds[i]);
-      debugPrint(" ");  // Space between values for readability
+    DEBUG_PRINT("Wheel Speeds after mapping: ");
+    for (int i = 0; i < cNumberOfWheels; i++) {
+      DEBUG_PRINT(wheelSpeeds[i]);
+      DEBUG_PRINT(" ");  // Space between values for readability
     }
-    debugPrintln("");  // New line after printing all speeds
+    DEBUG_PRINTLN("");  // New line after printing all speeds
 
     // Negative signs are to account for polarity of motors. Motors are wired to positive goes to A and negative to B
-    mecanum_motors.setSpeeds(wheelSpeeds[0], -wheelSpeeds[1], wheelSpeeds[2], -wheelSpeeds[3]);
+    gMecanumMotors.setSpeeds(wheelSpeeds[0], -wheelSpeeds[1], wheelSpeeds[2], -wheelSpeeds[3]);
 
   } else {
     if (lift_motor) {
-      debugPrint("Setting M1 speed to ");
-      debugPrintln(speed);
+      DEBUG_PRINT("Setting M1 speed to ");
+      DEBUG_PRINTLN(speed);
 
-      smol_motors.setM1Speed(200);
+      gSmolMotors.setM1Speed(200);
 
       delay(delayTime);
-      smol_motors.flipM1(false);
+      gSmolMotors.flipM1(false);
 
       //small_motors.setMotorA(255, true);
     } else {
-      debugPrint("Setting M2 speed to ");
-      debugPrintln(speed);
+      DEBUG_PRINT("Setting M2 speed to ");
+      DEBUG_PRINTLN(speed);
 
-      smol_motors.setM2Speed(200);
+      gSmolMotors.setM2Speed(200);
       delay(delayTime);
-      smol_motors.setM2Speed(-200);
+      gSmolMotors.setM2Speed(-200);
       //small_motors.setMotorB(255, true);
     }
   }
@@ -237,13 +248,13 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
 
   // turns off motors after delay
   if (wheelSpeeds) {
-    mecanum_motors.setSpeeds(0, 0, 0, 0);
+    gMecanumMotors.setSpeeds(0, 0, 0, 0);
   } else {
     if (lift_motor) {
-      smol_motors.setM1Brake(0);
+      gSmolMotors.setM1Brake(0);
       //small_motors.stopMotorA();
     } else {
-      smol_motors.setM2Brake(0);
+      gSmolMotors.setM2Brake(0);
       //small_motors.stopMotorB();
     }
   }
@@ -251,7 +262,7 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
 
 void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
 
-  for (int i = 0; i < NUMBER_OF_WHEELS; i++) {
+  for (int i = 0; i < cNumberOfWheels; i++) {
     wheelSpeeds[i] = map(wheelSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
   }
 }
