@@ -53,13 +53,15 @@ enum Directions {
   eBelt = 8,
 };
 
-int main() {
-  init();  // Initialize board
+JsonDocument gDoc;
+
+void setup() {
+  // init();  // Initialize board
   Serial.begin(9600);
   Serial2.begin(9600);
   Serial2.setTimeout(10000);
 
-  JsonDocument doc;
+  // JsonDocument doc;
 
   gMecanumMotors.init();
   gMecanumMotors.enableDrivers();
@@ -67,10 +69,10 @@ int main() {
   gSmolMotors.init();
   //small_motors.init();
 
-  loop(doc);
+  // loop(doc);
 }
 
-void loop(JsonDocument doc) {
+void loop() {
   std::queue<Move>* moveQueue = new std::queue<Move>();
   States state = eWaitingToStart;
 
@@ -79,12 +81,12 @@ void loop(JsonDocument doc) {
     switch (state) {
       case eWaitingToStart:
         DEBUG_PRINTLN("WAITING TO START");
-        read_serial(doc);
-        if (doc.isNull()) {
+        read_serial(gDoc);
+        if (gDoc.isNull()) {
           continue;
-        } else if (doc.containsKey("d")) {
+        } else if (gDoc.containsKey("d")) {
           DEBUG_PRINTLN("ABOUT TO DESERIALIZE D KEY");
-          deserializeDKeyIntoQueue(moveQueue, doc);
+          deserializeDKeyIntoQueue(moveQueue, gDoc);
           DEBUG_PRINTLN("DONE DESERIALIZING");
           state = eDriving;
         }
