@@ -14,17 +14,18 @@
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
-#include "DualTB9051FTGMotorShieldMod3230.h"
+#include <DualTB9051FTGMotorShieldBarebones.h>
+//#include <DualTB9051FTGMotorShieldMod3230.h>
 #include <L298NMotorDriverMega.h>
 #include <queue>
 #include "Wheelbase.h"
-#include "L298NMotorDriver.h"
+//#include "L298NMotorDriver.h"
 
 
 // Global variables :(
 const int NUMBER_OF_WHEELS = 4;
 
-DualTB9051FTGMotorShieldMod3230 mecanum_motors;
+DualTB9051FTGMotorShieldBarebones mecanum_motors;
 L298NMotorDriverMega smol_motors(5, 32, 33, 6, 34, 35);
 //L298NMotorDriver small_motors(34,32,33,35,5,6);
 
@@ -33,7 +34,7 @@ Wheelbase* wheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 // Structs and enums
 struct Move {
   unsigned short direction;
-  unsigned short time;
+  unsigned long time;
 };
 
 enum States {
@@ -216,17 +217,23 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
       debugPrintln(speed);
 
       smol_motors.setM1Speed(200);
+
+      delay(delayTime);
+      smol_motors.flipM1(false);
+
       //small_motors.setMotorA(255, true);
     } else {
       debugPrint("Setting M2 speed to ");
       debugPrintln(speed);
-      
+
       smol_motors.setM2Speed(200);
+      delay(delayTime);
+      smol_motors.setM2Speed(-200);
       //small_motors.setMotorB(255, true);
     }
   }
 
-  delay(delayTime * 1000);
+  delay(delayTime);
 
   // turns off motors after delay
   if (wheelSpeeds) {
@@ -234,10 +241,10 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
   } else {
     if (lift_motor) {
       smol_motors.setM1Brake(0);
-    //small_motors.stopMotorA();
+      //small_motors.stopMotorA();
     } else {
       smol_motors.setM2Brake(0);
-    //small_motors.stopMotorB();
+      //small_motors.stopMotorB();
     }
   }
 }
