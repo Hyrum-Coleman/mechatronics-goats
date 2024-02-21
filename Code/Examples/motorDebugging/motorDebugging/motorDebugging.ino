@@ -1,14 +1,10 @@
 #include <L298NMotorDriverMega.h>
 #include <DualTB9051FTGMotorShieldMod3230.h>
 
-// There are no default pins for this library
-// ENX should use:
-//    pins 11 and 12 for timer 1
-//    pins 5 and 2 for timer 3
-//    pins 6 and 7 for timer 4
-// or pins 45 and 46 for timer 5
-
-// INX can use any digital pin (doesn't have to be PWM).
+// To try:
+// 1. remove serial comms and see if wheels still move slowly
+// 2. try changing motor writes from 255 to 400
+// 3. look at the below comments of 'POSSIBLE PROBLEMS'
 
 const int ENA = 5; 
 const int IN1 = 34;
@@ -38,6 +34,7 @@ void setup() {
 
 void loop() {
     // Serial Comms
+    // POSSIBLE PROBLEM: Checking serial and assigning message EVERY TIME THROUGH THE LOOP. How often is it being sent? What if it reassigns a partial message?
     if (Serial2.available() > 2) {
       message = Serial2.readStringUntil('\n');
       Serial2.println(message);
@@ -45,7 +42,8 @@ void loop() {
 
     if (message.equals("Go!")) {
       // put your main code here, to run repeatedly:
-      double t = int(micros() / 1000000.0) % 8; //current time
+      // POSSIBLE PROBLEM -- SHOULD THIS BE ONLY UPDATED WHEN MESSAGE IS GO? OR SHOULD IT BE UPDATED OUTSIDE?
+      double t = int(micros() / 1000000.0) % 8; //current time -- change the mod to % 32 if driving wheels
       int M = 400 * sin(2 * PI * f * t); //Sinusoid motor voltage command
       // Turn on Motor 1 for 4 seconds /////////////////////////////////////////
       if (0.0 < t && t < 4.0) {
