@@ -11,26 +11,26 @@ DualTB9051FTGMotorShieldMod3230::DualTB9051FTGMotorShieldMod3230()
   _M1EN = 2;
   _M1DIR = 7;
   _M1PWM = 9;
-  _M1DIAG = 6;
-  _M1OCM = A0;
+  _M1DIAG = 99;
+  _M1OCM = A9;
 
   _M2EN = 4;
   _M2DIR = 8;
   _M2PWM = 10;
-  _M2DIAG = 12;
-  _M2OCM = A1;
+  _M2DIAG = 99;
+  _M2OCM = A9;
 
   _M3EN = 23;
   _M3DIR = 27;
   _M3PWM = 45;
-  _M3DIAG = 31;
-  _M3OCM = A2;
+  _M3DIAG = 99;
+  _M3OCM = A9;
 
   _M4EN = 25;
   _M4DIR = 29;
   _M4PWM = 46;
-  _M4DIAG = 33;
-  _M4OCM = A3;
+  _M4DIAG = 99;
+  _M4OCM = A9;
 
   _flipM1 = false;
   _flipM2 = false;
