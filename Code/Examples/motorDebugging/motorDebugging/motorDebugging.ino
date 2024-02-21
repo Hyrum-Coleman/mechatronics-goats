@@ -43,7 +43,7 @@ void loop() {
     if (message.equals("Go!")) {
       // put your main code here, to run repeatedly:
       // POSSIBLE PROBLEM -- SHOULD THIS BE ONLY UPDATED WHEN MESSAGE IS GO? OR SHOULD IT BE UPDATED OUTSIDE?
-      double t = int(micros() / 1000000.0) % 8; //current time -- change the mod to % 32 if driving wheels
+      double t = int(micros() / 1000000.0) % 32; //current time -- change the mod to % 32 if driving wheels
       int M = 400 * sin(2 * PI * f * t); //Sinusoid motor voltage command
       // Turn on Motor 1 for 4 seconds /////////////////////////////////////////
       if (0.0 < t && t < 4.0) {
@@ -61,53 +61,53 @@ void loop() {
         md.setM2Brake(0);
       }
 
-      // // Turn wheels forwards for 2 seconds /////////////////////////////////////////
-      // if (8.0 < t && t < 12.0) {
-      //   wheelMotors.setSpeeds(255, -255, 255, -255);
-      // }
-      // else {
-      //   wheelMotors.setSpeeds(0, 0, 0, 0);
-      // }
+      // Turn wheels forwards for 2 seconds /////////////////////////////////////////
+      if (8.0 < t && t < 12.0) {
+        wheelMotors.setSpeeds(255, -255, 255, -255);
+      }
+      else {
+        wheelMotors.setSpeeds(0, 0, 0, 0);
+      }
 
-      // // Turn wheels backwards for 2 seconds /////////////////////////////////////////
-      // if (12.0 < t && t < 16.0) {
-      //   wheelMotors.setSpeeds(-255, 255, -255, 255);
-      // }
-      // else {
-      //   wheelMotors.setSpeeds(0, 0, 0, 0);
-      // }
+      // Turn wheels backwards for 2 seconds /////////////////////////////////////////
+      if (12.0 < t && t < 16.0) {
+        wheelMotors.setSpeeds(-255, 255, -255, 255);
+      }
+      else {
+        wheelMotors.setSpeeds(0, 0, 0, 0);
+      }
 
-      // // Turn wheels left for 2 seconds /////////////////////////////////////////
-      // if (16.0 < t && t < 20.0) {
-      //   wheelMotors.setSpeeds(255, 255, -255, -255);
-      // }
-      // else {
-      //   wheelMotors.setSpeeds(0, 0, 0, 0);
-      // }
+      // Turn wheels left for 2 seconds /////////////////////////////////////////
+      if (16.0 < t && t < 20.0) {
+        wheelMotors.setSpeeds(255, 255, -255, -255);
+      }
+      else {
+        wheelMotors.setSpeeds(0, 0, 0, 0);
+      }
 
-      // // Turn wheels right for 2 seconds /////////////////////////////////////////
-      // if (20.0 < t && t < 24.0) {
-      //   wheelMotors.setSpeeds(-255, -255, 255, 255);
-      // }
-      // else {
-      //   wheelMotors.setSpeeds(0, 0, 0, 0);
-      // }
+      // Turn wheels right for 2 seconds /////////////////////////////////////////
+      if (20.0 < t && t < 24.0) {
+        wheelMotors.setSpeeds(-255, -255, 255, 255);
+      }
+      else {
+        wheelMotors.setSpeeds(0, 0, 0, 0);
+      }
 
-      // // Turn wheels clockwise for 2 seconds /////////////////////////////////////////
-      // if (24.0 < t && t < 28.0) {
-      //   wheelMotors.setSpeeds(255, 255, 255, 255);
-      // }
-      // else {
-      //   wheelMotors.setSpeeds(0, 0, 0, 0);
-      // }
+      // Turn wheels clockwise for 2 seconds /////////////////////////////////////////
+      if (24.0 < t && t < 28.0) {
+        wheelMotors.setSpeeds(255, 255, 255, 255);
+      }
+      else {
+        wheelMotors.setSpeeds(0, 0, 0, 0);
+      }
 
-      // // Turn wheels counterclockwise for 2 seconds /////////////////////////////////////////
-      // if (28.0 < t && t < 32.0) {
-      //   wheelMotors.setSpeeds(-255, -255, -255, -255);
-      // }
-      // else {
-      //   wheelMotors.setSpeeds(0, 0, 0, 0);
-      // }
+      // Turn wheels counterclockwise for 2 seconds /////////////////////////////////////////
+      if (28.0 < t && t < 32.0) {
+        wheelMotors.setSpeeds(-255, -255, -255, -255);
+      }
+      else {
+        wheelMotors.setSpeeds(0, 0, 0, 0);
+      }
 
     }
 
