@@ -34,10 +34,29 @@ private:
   float r;   // Radius of the wheels
 
 public:
-  Wheelbase (float lx, float ly, float wheelRadius)
+  Wheelbase(float lx, float ly, float wheelRadius)
     : Lx(lx), Ly(ly), r(wheelRadius) {}
 
-  void computeWheelSpeeds(float vx, float vy, float omega, float wheelSpeeds[4]) {
+  // OLD VERSION WITH ORIGINAL COORDINATE SYSTEM
+  /*void computeWheelSpeeds(float vx, float vy, float omega, float wheelSpeeds[4]) {
+    // Compute the factor (Lx + Ly)
+    float factor = Lx + Ly;
+
+    // Calculate wheel speeds based on the forward kinematics matrix
+    /* (1/r)
+    //   1  -1  -(lx+ly) 
+    //   1   1   (lx+ly)
+    //   1   1  -(lx+ly)
+    //   1  -1   (lx+ly)
+    
+    wheelSpeeds[0] = (1 / r) * (vx - vy - factor * omega);  // Wheel 1 speed
+    wheelSpeeds[1] = (1 / r) * (vx + vy + factor * omega);  // Wheel 2 speed
+    wheelSpeeds[2] = (1 / r) * (vx + vy - factor * omega);  // Wheel 3 speed
+    wheelSpeeds[3] = (1 / r) * (vx - vy + factor * omega);  // Wheel 4 speed
+  }
+  */
+
+  void computeWheelSpeeds(float vx, float vy, float omega, float wheelSpeeds[4]) const {
     // Compute the factor (Lx + Ly)
     float factor = Lx + Ly;
 
@@ -48,13 +67,14 @@ public:
     //   1   1  -(lx+ly)
     //   1  -1   (lx+ly)
     */
-    wheelSpeeds[0] = (1 / r) * (vx - vy - factor * omega);  // Wheel 1 speed
-    wheelSpeeds[1] = (1 / r) * (vx + vy + factor * omega);  // Wheel 2 speed
-    wheelSpeeds[2] = (1 / r) * (vx + vy - factor * omega);  // Wheel 3 speed
-    wheelSpeeds[3] = (1 / r) * (vx - vy + factor * omega);  // Wheel 4 speed
+    wheelSpeeds[0] = (1 / r) * (vy + vx - factor * omega);  // Wheel 1 speed, flipped vx
+    wheelSpeeds[1] = (1 / r) * (vy - vx + factor * omega);  // Wheel 2 speed, flipped vx
+    wheelSpeeds[2] = (1 / r) * (vy - vx - factor * omega);  // Wheel 3 speed, flipped vx
+    wheelSpeeds[3] = (1 / r) * (vy + vx + factor * omega);  // Wheel 4 speed, flipped vx
   }
-
-  void computeVelocities(float wheelSpeeds[4], float &vx, float &vy, float &omega) {
+  // OLD VERSION WITH ORIGINAL COORDINATE SYSTEM
+  // UNTESTED
+  /*void computeVelocities(float wheelSpeeds[4], float &vx, float &vy, float &omega) {
     // Compute the factor (Lx + Ly)
     float factor = Lx + Ly;
 
@@ -63,10 +83,26 @@ public:
     //   1          1          1          1
     //  -1          1          1         -1
     //  -1/(lx+ly)  1/(lx+ly) -1/(lx+ly)  1/(lx+ly)
-    */
+    
     vx = (r / 4) * (wheelSpeeds[0] - wheelSpeeds[1] - wheelSpeeds[2] + wheelSpeeds[3]);
     vy = (r / 4) * (-wheelSpeeds[0] + wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]);
     omega = (r / (4 * factor)) * (-wheelSpeeds[0] + wheelSpeeds[1] - wheelSpeeds[2] + wheelSpeeds[3]);
+  }*/
+
+  // UNTESTED
+  void computeVelocities(float wheelSpeeds[4], float &vx, float &vy, float &omega) const {
+    // Compute the factor (Lx + Ly)
+    float factor = Lx + Ly;
+
+    // Calculate vy, vx (swapped and flipped vx), and omega based on the inverse kinematics matrix after adjustments
+    /* (r/4)
+    //   1          1          1          1
+    //  -1          1          1         -1
+    //  -1/(lx+ly)  1/(lx+ly) -1/(lx+ly)  1/(lx+ly)
+    */
+    vy = (r / 4) * (wheelSpeeds[0] - wheelSpeeds[1] - wheelSpeeds[2] + wheelSpeeds[3]);
+    vx = (r / 4) * (wheelSpeeds[0] - wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]);
+    omega = (r / (4 * factor)) * (wheelSpeeds[0] - wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]);
   }
 };
 
