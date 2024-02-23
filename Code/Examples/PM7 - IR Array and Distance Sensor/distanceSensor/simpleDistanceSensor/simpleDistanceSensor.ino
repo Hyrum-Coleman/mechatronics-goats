@@ -10,11 +10,11 @@ void setup() {
 void loop() {
   int distSensorValue1 = analogRead(distPin1); // Read the first sensor output (0 to 1023)
   float voltage1 = distSensorValue1 * (5.0 / 1023.0); // Convert the reading to voltage
-  float distance1 = convertVoltageToDistance(voltage1); // Convert voltage to distance in cm for the first sensor
+  float distance1 = calculateDistance(voltage1); // Convert voltage to distance in cm for the first sensor
 
   int distSensorValue2 = analogRead(distPin2); // Read the second sensor output (0 to 1023)
   float voltage2 = distSensorValue2 * (5.0 / 1023.0); // Convert the reading to voltage
-  float distance2 = convertVoltageToDistance(voltage2); // Convert voltage to distance in cm for the second sensor
+  float distance2 = calculateDistance(voltage2); // Convert voltage to distance in cm for the second sensor
 
   Serial2.print("Distance Sensor 1: ");
   Serial2.print(distance1);

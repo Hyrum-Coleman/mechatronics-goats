@@ -4,6 +4,7 @@
 QTRSensors qtr;
 const uint8_t SensorCount = 8;
 uint16_t sensorValues[SensorCount];
+String message = "";
 
 DualTB9051FTGMotorShieldMod3230 wheels;
 
