@@ -332,7 +332,7 @@ Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
   return retMove;
 }
 
-void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long maxSpeed) {
+void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds) {
   if (wheelSpeeds) {
     DEBUG_PRINTLN("Running wheel motors with blocking delay.");
 
