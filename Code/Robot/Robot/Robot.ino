@@ -225,37 +225,37 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
 void executeFreeDrive(Move nextMove) {
   float wheelSpeeds[cNumberOfWheels]; // Initialize motor speeds
   int delayTime = nextMove.params.freedriveParams.duration;
-  int motorMax = 400; // Maximum motor speed
 
   switch ((Directions)nextMove.params.freedriveParams.direction) {
-    case eForwards:
-      gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
-      break;
-    case eLeft:
-      gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
-      break;
-    case eBackwards:
-      gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
-      break;
-    case eRight:
-      gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
-      break;
-    case eCCW:
-      gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
-      break;
-    case eCW:
-      gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
-      break;
-    default:
-      DEBUG_PRINT("Unexpected input in direction switch for freedrive: ");
-      break;
-  }
+  case eForwards:
+    gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
+    runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+    break;
+  case eLeft:
+    gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
+    runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+    break;
+  case eBackwards:
+    gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
+    runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+    break;
+  case eRight:
+    gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
+    runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+    break;
+  case eCCW:
+    gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
+    runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+    break;
+  case eCW:
+    gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
+    runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+    break;
+  default:
+    DEBUG_PRINTLN("Unexpected input in direction switch for freedrive.");
+    break;
+}
+
 }
 
 void executeLineFollow(Move nextMove) {
@@ -337,7 +337,7 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long
     DEBUG_PRINTLN("Running wheel motors with blocking delay.");
 
     // Map wheel speeds from their current values to a scale suitable for the motor drivers.
-    mapWheelSpeeds(wheelSpeeds, maxSpeed);
+    mapWheelSpeeds(wheelSpeeds, 400); // changed this back to hardcoded value. should probably be a pound define.
 
     // Set the motor speeds.
     gMecanumMotors.setSpeeds(wheelSpeeds[0], -wheelSpeeds[1], wheelSpeeds[2], -wheelSpeeds[3]);
