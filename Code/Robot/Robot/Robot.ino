@@ -14,31 +14,65 @@
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
-//#include <DualTB9051FTGMotorShieldBarebones.h>
 #include <DualTB9051FTGMotorShieldMod3230.h>
 #include <L298NMotorDriverMega.h>
+#include <QTRSensors.h>
 #include <queue>
 #include "Wheelbase.h"
+// Custom versions of libraries to debug (kinda useless)
 //#include "L298NMotorDriver.h"
-
+//#include <DualTB9051FTGMotorShieldBarebones.h>
 
 // Global variables :(
 const int cNumberOfWheels = 4;
+const uint8_t SensorCount = 8;
+uint16_t sensorValues[SensorCount];
+const int distPin1 = A4; // Left IR rangefinder sensor
+const int distPin2 = A5; // Right IR rangefinder sensor
+const int topLimitSwitchPin = 53; // Replace XX with the actual pin number
+const int bottomLimitSwitchPin = 52; // Replace YY with the actual pin number
 
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
-L298NMotorDriverMega gSmolMotors(5, 32, 33, 6, 34, 35);
-//L298NMotorDriver small_motors(34,32,33,35,5,6);
-
+L298NMotorDriverMega gL2Motors(5, 32, 33, 6, 34, 35);
 Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
+QTRSensors qtr;
 
 // Structs and enums
+enum MoveType {
+  eFreeDrive = 0,
+  eLineFollow = 1,
+  eScissor = 2,
+  eBelt = 3,
+};
+
+// Onion for move-specific parameters
+union MoveParameters {
+  struct {
+    unsigned short direction; // which way to drive (will be [x,y,theta] in the future)
+    unsigned long duration; // how far to go (will be distance not time in the future)
+  } freedriveParams; // For eFreeDrive
+
+  struct {
+    unsigned long stopDistance; // how far to stop away from obstacle when line following
+  } linefollowParams; // For eLineFollow
+
+  struct {
+    bool direction; // which way to move the scissor jack. 1 for up 0 for down.
+  } scissorParams; // For eScissor
+
+  struct {
+    bool direction; // which way to drive the belt
+    unsigned long duration; // how long to drive the belt
+  } beltParams; // For belt
+};
+
 struct Move {
-  unsigned short direction;
-  unsigned long time;
+  MoveType moveType;
+  MoveParameters params;
 };
 
 enum States {
-  eDriving = 0,
+  eMoving = 0,
   eWaitingToStart = 1,
 };
 
@@ -49,11 +83,7 @@ enum Directions {
   eRight = 4,
   eCCW = 5,
   eCW = 6,
-  eLift = 7,
-  eBelt = 8,
 };
-
-//JsonDocument gDoc; // from when we were trying no int main() approach
 
 int main() {
   init();  // Initialize board
@@ -66,8 +96,10 @@ int main() {
   gMecanumMotors.init();
   gMecanumMotors.enableDrivers();
 
-  gSmolMotors.init();
+  gL2Motors.init();
   //small_motors.init();
+
+  setPinModes();
 
   loop(doc);
 }
@@ -77,6 +109,7 @@ void loop(JsonDocument& doc) {
   States state = eWaitingToStart;
 
   // LOOP BEGINS
+  // -------------------------------------------------
   while (true) {
     switch (state) {
       case eWaitingToStart:
@@ -85,41 +118,71 @@ void loop(JsonDocument& doc) {
         if (doc.isNull()) {
           continue;
         } else if (doc.containsKey("d")) {
-          DEBUG_PRINTLN("ABOUT TO DESERIALIZE D KEY");
-          deserializeDKeyIntoQueue(moveQueue, doc);
-          DEBUG_PRINTLN("DONE DESERIALIZING");
-          state = eDriving;
+          parseJsonIntoQueue(moveQueue, doc);
+          state = eMoving;
         }
         break;
-      case eDriving:
-        DEBUG_PRINTLN("JUST ENTERED DRIVING STATE");
-        if (moveQueue->empty()) {
-          DEBUG_PRINTLN("MOVEQUEUE EMPTY.");
-          state = eWaitingToStart;  // Go back to waiting state if queue is empty
-          DEBUG_PRINTLN("STATE SET TO WAITING TO START!");
-          break;
-        }
-        driving_logic(moveQueue);
+      case eMoving:
+        executeMoveSequence(moveQueue);
+        // Done executing moves
+        state = eWaitingToStart;
         break;
     }
   }
+  // -------------------------------------------------
 }
 
-void deserializeDKeyIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
-  for (JsonObject obj : doc["d"].as<JsonArray>()) {
-    Move currentMove;
-    currentMove.direction = obj["a"];
-    currentMove.time = obj["t"];
-    moveQueue->push(currentMove);
+// New JSON format.
+// Needs to be abbreviated to save bytes.
+// Suggest: x for type, d for direction, t for duration, f l s and b fir types.
+/*
+{
+  "g": [
+    {
+      "type": "freedrive",
+      "direction": 1,
+      "duration": 5000
+    },
+    {
+      "type": "linefollow",
+      "stopDistance": 100
+    },
+    {
+      "type": "scissor",
+      "direction": 1, // 1 or 0 for top and bottom
+    },
+    {
+      "type": "belt",
+      "duration": 2000
+    }
+  ]
+}
+*/
+void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
+    for (JsonObject obj : doc["g"].as<JsonArray>()) { // g for go
+        Move currentMove;
 
-    DEBUG_PRINT("Pushed Move - Direction: ");
-    DEBUG_PRINT(currentMove.direction);
-    DEBUG_PRINT(", Time: ");
-    DEBUG_PRINTLN(currentMove.time);
-  }
-
-  DEBUG_PRINT("Total Moves in Queue: ");
-  DEBUG_PRINTLN(moveQueue->size());
+        // Populate move structs params based on move type
+        String moveType = obj["type"].as<String>();
+        if (moveType == "freedrive") {
+            currentMove.moveType = eFreeDrive;
+            currentMove.params.freedriveParams.direction = obj["direction"];
+            currentMove.params.freedriveParams.duration = obj["duration"];
+        } else if (moveType == "linefollow") {
+            currentMove.moveType = eLineFollow;
+            currentMove.params.linefollowParams.stopDistance = obj["stopDistance"];
+        } else if (moveType == "scissor") {
+            currentMove.moveType = eScissor;
+            currentMove.params.scissorParams.direction = obj["direction"];
+        } else if (moveType == "belt") {
+            currentMove.moveType = eBelt;
+            currentMove.params.beltParams.duration = obj["duration"];
+        } else {
+            // If move unknown,
+            continue; // Skip this move
+        }
+        moveQueue->push(currentMove);
+    }
 }
 
 void read_serial(JsonDocument& doc) {
@@ -135,61 +198,129 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-void driving_logic(std::queue<Move>* moveQueue) {
-  float wheelSpeeds[cNumberOfWheels];  // Initialize motor speeds
+void executeMoveSequence(std::queue<Move>* moveQueue) {
+  while (!moveQueue->empty()) { // Loop until the queue is empty
+    Move nextMove = getNextMoveFromQueue(moveQueue);
+    switch ((MoveType)nextMove.moveType) {
+      case eFreeDrive:
+        executeFreeDrive(nextMove);
+        break;
+      case eLineFollow:
+        executeLineFollow(nextMove);
+        break;
+      case eScissor:
+        executeScissor(nextMove);
+        break;
+      case eBelt:
+        executeBelt(nextMove);
+        break;
+      default:
+        DEBUG_PRINT("Unexpected moveType: ");
+        DEBUG_PRINTLN(nextMove.moveType);
+        break;
+    }
+  }
+}
 
-  Move nextMove = getNextMoveFromQueue(moveQueue);
-  int delayTime = nextMove.time;
-  int motorMax = 400;
-  switch ((Directions)nextMove.direction) {
-    DEBUG_PRINT("NEXTMOVE.DIRECTION: ");
-    DEBUG_PRINTLN(nextMove.direction);
+void executeFreeDrive(Move nextMove) {
+  float wheelSpeeds[cNumberOfWheels]; // Initialize motor speeds
+  int delayTime = nextMove.params.freedriveParams.duration;
+  int motorMax = 400; // Maximum motor speed
 
-    case eForwards:  // forwards
-      DEBUG_PRINTLN("Driving: Forwards");
+  switch ((Directions)nextMove.params.freedriveParams.direction) {
+    case eForwards:
       gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case eLeft:  // left
-      DEBUG_PRINTLN("Driving: Left");
+    case eLeft:
       gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case eBackwards:  // backwards
-      DEBUG_PRINTLN("Driving: Backwards");
+    case eBackwards:
       gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case eRight:  // right
-      DEBUG_PRINTLN("Driving: Right");
+    case eRight:
       gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case eCCW:  // rotate ccw
-      DEBUG_PRINTLN("Driving: rotate ccw");
-      // Rotations are more sensitive. I hand calculated 1.059 to match our map scale
+    case eCCW:
       gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case eCW:  // rotate cw
-      DEBUG_PRINTLN("Driving: rotate cw");
-      // Rotations are more sensitive. I hand calculated 1.059 to match our map scale
+    case eCW:
       gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds, motorMax, false);
       break;
-    case eLift:  // lift motor
-      DEBUG_PRINTLN("Driving: lift motor");
-      runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, true);
-      break;
-    case eBelt:  // belt motor
-      DEBUG_PRINTLN("Driving: belt motor");
-      runMotorsWithBlockingDelay(delayTime, nullptr, motorMax, false);
-      break;
     default:
-      DEBUG_PRINT("Unexpected input in direction switch: ");
-      DEBUG_PRINTLN(nextMove.direction);
+      DEBUG_PRINT("Unexpected input in direction switch for freedrive: ");
       break;
   }
+}
+
+void executeLineFollow(Move nextMove) {
+  float targetDistance = nextMove.params.linefollowParams.stopDistance;
+
+  while (true) {
+        // Perform line following logic
+        uint16_t position = qtr.readLineBlack(sensorValues);
+        int error = position - 3500; // Center is 3500 for 8 sensors
+        double Kp = 1.0 / 20.0;
+
+        int baseSpeed = 200; // Base speed for each motor
+        int leftSpeed = baseSpeed - (Kp * error);
+        int rightSpeed = baseSpeed + (Kp * error);
+
+        // Set motor speeds based on line position
+        gMecanumMotors.setSpeeds(leftSpeed, -rightSpeed, leftSpeed, -rightSpeed);
+
+        // Check distance to wall using distance sensors
+        float distanceLeft = pollRangefinder(distPin1);
+        float distanceRight = pollRangefinder(distPin2);
+
+        // If close enough to the wall, stop
+        if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
+            gMecanumMotors.setSpeeds(0, 0, 0, 0); // Stop the robot
+            break; // Exit the loop
+        }
+
+        delay(100); // Short delay to avoid overly frequent sensor readings and motor updates
+    }
+}
+
+// NOTE: THE DIRECTION OF THE MOTOR TO GO UP VS DOWN MAY NEED TO BE CHANGED!!!
+void executeScissor(Move nextMove) {
+    unsigned long targetHeight = nextMove.params.scissorParams.direction;
+
+    if (targetHeight == 1) {
+        // Move towards the top limit switch
+        gL2Motors.setM2Speed(100);
+        while(digitalRead(topLimitSwitchPin) == LOW) {
+            // Keep moving until the top limit switch is triggered
+            delay(10);
+        }
+    } else if (targetHeight == 0) {
+        // Move towards the bottom limit switch
+        gL2Motors.setM2Speed(-100);
+        while(digitalRead(bottomLimitSwitchPin) == LOW) {
+            // Keep moving until the bottom limit switch is triggered
+            delay(10); // Small delay to prevent too rapid polling
+        }
+    }
+
+    gL2Motors.setM2Speed(0); // Stop the motor once the limit switch is reached
+}
+
+void executeBelt(Move nextMove) {
+    unsigned long duration = nextMove.params.beltParams.duration; // Duration in milliseconds
+    bool direction = nextMove.params.beltParams.direction; // Direction (1 is forward, 0 is backward)
+
+    // Determine speed based on direction
+    int speed = direction ? 400 : -400; // Assume positive speed for forward, negative for backward
+
+    gL2Motors.setM1Speed(speed); // Set speed and direction
+    delay(duration); // Run for specified duration
+    gL2Motors.setM1Speed(0); // Stop the belt
 }
 
 Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
@@ -201,64 +332,26 @@ Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
   return retMove;
 }
 
-void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long speed, bool lift_motor) {
-
-  // if motorSpeeds is accessesed outside this if, a segfault will be issued :trollface:
+void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds, unsigned long maxSpeed) {
   if (wheelSpeeds) {
-    DEBUG_PRINT("Wheel Speeds before mapping: ");
-    for (int i = 0; i < cNumberOfWheels; i++) {
-      DEBUG_PRINT(wheelSpeeds[i]);
-      DEBUG_PRINT(" ");  // Space between values for readability
-    }
+    DEBUG_PRINTLN("Running wheel motors with blocking delay.");
 
-    DEBUG_PRINTLN("");                    // New line after printing all speeds
-    mapWheelSpeeds(wheelSpeeds, speed);  // mutates motorSpeeds
+    // Map wheel speeds from their current values to a scale suitable for the motor drivers.
+    mapWheelSpeeds(wheelSpeeds, maxSpeed);
 
-    DEBUG_PRINT("Wheel Speeds after mapping: ");
-    for (int i = 0; i < cNumberOfWheels; i++) {
-      DEBUG_PRINT(wheelSpeeds[i]);
-      DEBUG_PRINT(" ");  // Space between values for readability
-    }
-    DEBUG_PRINTLN("");  // New line after printing all speeds
-
-    // Negative signs are to account for polarity of motors. Motors are wired to positive goes to A and negative to B
+    // Set the motor speeds.
     gMecanumMotors.setSpeeds(wheelSpeeds[0], -wheelSpeeds[1], wheelSpeeds[2], -wheelSpeeds[3]);
 
-  } else {
-    if (lift_motor) {
-      DEBUG_PRINT("Setting M1 speed to ");
-      DEBUG_PRINTLN(speed);
+    // Wait for the specified delay time.
+    delay(delayTime);
 
-      gSmolMotors.setM1Speed(200);
-
-      delay(delayTime);
-      gSmolMotors.flipM1(false);
-
-      //small_motors.setMotorA(255, true);
-    } else {
-      DEBUG_PRINT("Setting M2 speed to ");
-      DEBUG_PRINTLN(speed);
-
-      gSmolMotors.setM2Speed(200);
-      delay(delayTime);
-      gSmolMotors.setM2Speed(-200);
-      //small_motors.setMotorB(255, true);
-    }
-  }
-
-  delay(delayTime);
-
-  // turns off motors after delay
-  if (wheelSpeeds) {
+    // Turn off motors after the delay.
     gMecanumMotors.setSpeeds(0, 0, 0, 0);
+
+    DEBUG_PRINTLN("Motors stopped.");
   } else {
-    if (lift_motor) {
-      gSmolMotors.setM1Brake(0);
-      //small_motors.stopMotorA();
-    } else {
-      gSmolMotors.setM2Brake(0);
-      //small_motors.stopMotorB();
-    }
+    // Log an error if wheelSpeeds is null.
+    DEBUG_PRINTLN("Error: wheelSpeeds is null.");
   }
 }
 
@@ -267,4 +360,16 @@ void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
   for (int i = 0; i < cNumberOfWheels; i++) {
     wheelSpeeds[i] = map(wheelSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
   }
+}
+
+float pollRangefinder(int pin) {
+  int sensorValue = analogRead(pin);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  float distance = 33.9 - 69.5 * voltage + 62.3 * pow(voltage, 2) - 25.4 * pow(voltage, 3) + 3.83 * pow(voltage, 4);
+  return distance;
+}
+
+void setPinModes(){
+  pinMode(topLimitSwitchPin, INPUT);
+  pinMode(bottomLimitSwitchPin, INPUT);
 }

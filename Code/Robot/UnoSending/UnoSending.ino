@@ -10,33 +10,9 @@ void setup() {
   Serial.begin(9600);
   sendingSerial.begin(9600);
 
-  JsonArray arr = doc.createNestedArray("d");
-  JsonObject obj1 = arr.createNestedObject();
-  obj1["a"] = 1;
-  obj1["t"] = 1000;
-  JsonObject obj2 = arr.createNestedObject();
-  obj2["a"] = 2;
-  obj2["t"] = 1000;
-  JsonObject obj3 = arr.createNestedObject();
-  obj3["a"] = 3;
-  obj3["t"] = 1000;
-  JsonObject obj4 = arr.createNestedObject();
-  obj4["a"] = 4;
-  obj4["t"] = 1000;
-  JsonObject obj5 = arr.createNestedObject();
-  obj5["a"] = 5;
-  obj5["t"] = 1000;
-  JsonObject obj6 = arr.createNestedObject();
-  obj6["a"] = 6;
-  obj6["t"] = 1000;
-  JsonObject obj7 = arr.createNestedObject();
-  obj7["a"] = 7;
-  obj7["t"] = 500;
-  JsonObject obj8 = arr.createNestedObject();
-  obj8["a"] = 8;
-  obj8["t"] = 500;
-
-  serializeJson(doc, sendingSerial);
+  //sendTestSequence();
+  //sendLineFollowingTest();
+  // OR, send json packets in serial monitor
 }
 
 void loop() {
@@ -65,4 +41,53 @@ void deserialize_from_serial_input() {
   serializeJson(doc, loggingStream);
   sendingSerial.println();
   return;
+}
+
+void sendTestSequence() {
+  DynamicJsonDocument doc(1024);
+  JsonArray arr = doc.createNestedArray("d");
+
+  // Drive forwards, left, back, right, rotate CCW then CW
+  const int directionValues[] = {1, 2, 3, 4, 5, 6};
+  const unsigned long durations[] = {1000, 1000, 1000, 1000, 1000, 1000};
+
+  for (int i = 0; i < 6; i++) {
+    JsonObject obj = arr.createNestedObject();
+    obj["type"] = "freedrive";
+    obj["direction"] = directionValues[i];
+    obj["duration"] = durations[i];
+  }
+
+  // Move the lift up and down
+  JsonObject obj7 = arr.createNestedObject();
+  obj7["type"] = "scissor";
+  obj7["direction"] = 1;
+
+  JsonObject obj8 = arr.createNestedObject();
+  obj8["type"] = "scissor";
+  obj8["direction"] = 0;
+
+  // Move the belt forward and back
+  JsonObject obj9 = arr.createNestedObject();
+  obj9["type"] = "belt";
+  obj9["direction"] = 1;
+  obj9["duration"] = 2000;
+
+  JsonObject obj10 = arr.createNestedObject();
+  obj10["type"] = "belt";
+  obj10["direction"] = 0;
+  obj10["duration"] = 2000;
+
+  serializeJson(doc, sendingSerial);
+}
+
+void sendLineFollowingTest() {
+  DynamicJsonDocument doc2(1024);
+  JsonArray arr2 = doc2.createNestedArray("d");
+
+  JsonObject obj1 = arr2.createNestedObject();
+  obj1["type"] = "linefollow";
+  obj1["stopDistance"] = 10;
+
+  serializeJson(doc2, sendingSerial);
 }
