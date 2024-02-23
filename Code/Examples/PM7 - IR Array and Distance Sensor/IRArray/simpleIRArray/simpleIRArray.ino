@@ -76,28 +76,25 @@ void loop()
     message = Serial2.readStringUntil('\n');
   }
   if (message.equals("Go!")) {
-    void loop()
+    // read calibrated sensor values and obtain a measure of the line position
+    // position is from 0 to 7000 -- 0 is under sensor 1, 7000 is under sensor 8
+    uint16_t position = qtr.readLineBlack(sensorValues);
+
+    // Print a header for the sensor values for clarity
+    Serial2.print("Sensor Values: ");
+    for (uint8_t i = 0; i < SensorCount; i++)
     {
-      // read calibrated sensor values and obtain a measure of the line position
-      // position is from 0 to 7000 -- 0 is under sensor 1, 7000 is under sensor 8
-      uint16_t position = qtr.readLineBlack(sensorValues);
-
-      // Print a header for the sensor values for clarity
-      Serial.print("Sensor Values: ");
-      for (uint8_t i = 0; i < SensorCount; i++)
-      {
-        Serial.print("S");
-        Serial.print(i + 1); // Sensor number
-        Serial.print(": ");
-        Serial.print(sensorValues[i]);
-        Serial.print("\t"); // Tab space for separation
-      }
-
-      // Print the line position with a label
-      Serial.print("Line Position: ");
-      Serial.println(position);
-
-      delay(250); // Delay for readability
+      Serial2.print("S");
+      Serial2.print(i + 1); // Sensor number
+      Serial2.print(": ");
+      Serial2.print(sensorValues[i]);
+      Serial2.print("\t"); // Tab space for separation
     }
+
+    // Print the line position with a label
+    Serial2.print("Line Position: ");
+    Serial2.println(position);
+
+    delay(250); // Delay for readability=
   }
 }
