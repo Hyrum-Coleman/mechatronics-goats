@@ -29,24 +29,6 @@
       "type": "freedrive",
       "direction": 6,
       "duration": 1000
-    },
-    {
-      "type": "scissor",
-      "direction": 1
-    },
-    {
-      "type": "scissor",
-      "direction": 0
-    },
-    {
-      "type": "belt",
-      "direction": 1,
-      "duration": 2000
-    },
-    {
-      "type": "belt",
-      "direction": 0,
-      "duration": 2000
-    }
+    } 
   ]
 }
