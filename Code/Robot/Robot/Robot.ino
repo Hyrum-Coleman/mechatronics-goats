@@ -290,6 +290,7 @@ void executeLineFollow(Move nextMove) {
 
 // NOTE: THE DIRECTION OF THE MOTOR TO GO UP VS DOWN MAY NEED TO BE CHANGED!!!
 // If switches dont get triggered, this times out to avoid getting stuck in a loop
+// TODO: FIGURE OUT DIRECTION NOT WORKING
 void executeScissor(Move nextMove) {
   unsigned long targetHeight = nextMove.params.scissorParams.direction;
   unsigned long startTime = millis(); // Capture the start time
@@ -324,6 +325,7 @@ void executeScissor(Move nextMove) {
   gL2Motors.setM2Speed(0); // Stop the motor once the limit switch is reached or timeout occurs
 }
 
+// TODO: FIGURE OUT DIRECTION NOT WORKING
 void executeBelt(Move nextMove) {
   unsigned long duration = nextMove.params.beltParams.duration;  // Duration in milliseconds
   bool direction = nextMove.params.beltParams.direction;         // Direction (1 is forward, 0 is backward)
