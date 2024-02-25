@@ -18,8 +18,8 @@ void setup() {
     36, 38, 40, 42, 43, 41, 39, 37
   }, SensorCount);
 
-  // Calibrate for 10s -- MOVE THE ROBOT AROUND THE LINE DURING THIS TIME.
-  for (uint16_t i = 0; i < 400; i++) {
+  // Calibrate for 3s -- MOVE THE ROBOT AROUND THE LINE DURING THIS TIME.
+  for (uint16_t i = 0; i < 100; i++) {
     qtr.calibrate();
   }
 
