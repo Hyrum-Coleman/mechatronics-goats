@@ -41,12 +41,12 @@
     {
       "type": "belt",
       "direction": 1,
-      "duration": 2000
+      "duration": 1000
     },
     {
       "type": "belt",
       "direction": 0,
-      "duration": 2000
+      "duration": 1000
     }
   ]
 }

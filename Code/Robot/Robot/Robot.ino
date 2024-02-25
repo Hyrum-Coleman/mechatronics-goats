@@ -176,6 +176,7 @@ void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
       currentMove.params.scissorParams.direction = obj["direction"];
     } else if (moveType == "belt") {
       currentMove.moveType = eBelt;
+      currentMove.params.beltParams.direction = obj["direction"];
       currentMove.params.beltParams.duration = obj["duration"];
     } else {
       // If move unknown,
@@ -288,38 +289,61 @@ void executeLineFollow(Move nextMove) {
 }
 
 // NOTE: THE DIRECTION OF THE MOTOR TO GO UP VS DOWN MAY NEED TO BE CHANGED!!!
+// If switches dont get triggered, this times out to avoid getting stuck in a loop
 void executeScissor(Move nextMove) {
   unsigned long targetHeight = nextMove.params.scissorParams.direction;
+  unsigned long startTime = millis(); // Capture the start time
+  unsigned long timeout = 5000; // Set timeout
 
   if (targetHeight == 1) {
+    DEBUG_PRINTLN("MOVING PLATFORM UP");
     // Move towards the top limit switch
     gL2Motors.setM2Speed(100);
     while (digitalRead(topLimitSwitchPin) == LOW) {
-      // Keep moving until the top limit switch is triggered
-      delay(10);
+      // Check if timeout is exceeded
+      if (millis() - startTime > timeout) {
+        DEBUG_PRINTLN("Timeout reached while moving up");
+        break; // Exit the loop if the timeout is exceeded
+      }
+      delay(10); // Small delay to prevent too rapid polling
     }
   } else if (targetHeight == 0) {
+    DEBUG_PRINTLN("MOVING PLATFORM DOWN");
     // Move towards the bottom limit switch
     gL2Motors.setM2Speed(-100);
     while (digitalRead(bottomLimitSwitchPin) == LOW) {
-      // Keep moving until the bottom limit switch is triggered
-      delay(10);  // Small delay to prevent too rapid polling
+      // Check if timeout is exceeded
+      if (millis() - startTime > timeout) {
+        DEBUG_PRINTLN("Timeout reached while moving down");
+        break; // Exit the loop if the timeout is exceeded
+      }
+      delay(10); // Small delay to prevent too rapid polling
     }
   }
 
-  gL2Motors.setM2Speed(0);  // Stop the motor once the limit switch is reached
+  gL2Motors.setM2Speed(0); // Stop the motor once the limit switch is reached or timeout occurs
 }
 
 void executeBelt(Move nextMove) {
   unsigned long duration = nextMove.params.beltParams.duration;  // Duration in milliseconds
   bool direction = nextMove.params.beltParams.direction;         // Direction (1 is forward, 0 is backward)
-
+  
   // Determine speed based on direction
   int speed = direction ? 400 : -400;  // Assume positive speed for forward, negative for backward
+  
+  if (speed == 400) {
+    DEBUG_PRINTLN("MOVING BELT FORWARD");
+  }
+  else {
+    DEBUG_PRINTLN("MOVING BELT BACKWARD");
+  }
 
   gL2Motors.setM1Speed(speed);  // Set speed and direction
   delay(duration);              // Run for specified duration
   gL2Motors.setM1Speed(0);      // Stop the belt
+
+  DEBUG_PRINTLN("Done moving belt.");
+
 }
 
 Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
