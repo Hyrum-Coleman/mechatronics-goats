@@ -43,6 +43,7 @@ enum MoveType {
   eLineFollow = 1,
   eScissor = 2,
   eBelt = 3,
+  eCalibrate = 4,
 };
 
 // Onion for move-specific parameters
@@ -64,6 +65,10 @@ union MoveParameters {
     bool direction;          // which way to drive the belt
     unsigned long duration;  // how long to drive the belt
   } beltParams;              // For belt
+  
+  struct {
+    unsigned long duration;  // How long to calibrate line follower
+  } calibrationParams;       // For calibrating sensors
 };
 
 struct Move {
@@ -86,19 +91,27 @@ enum Directions {
 };
 
 int main() {
-  init();  // Initialize board
+  init();  // Initialize board itself
   Serial.begin(9600);
   Serial2.begin(9600);
   Serial2.setTimeout(10000);
 
   JsonDocument doc;
 
+  // initialize both DualTB drivers
   gMecanumMotors.init();
   gMecanumMotors.enableDrivers();
 
+  // initialize L298N
   gL2Motors.init();
-  //small_motors.init();
 
+  // initialize IR array
+  qtr.setTypeRC();
+  qtr.setSensorPins((const uint8_t[]) {
+    36, 38, 40, 42, 43, 41, 39, 37
+  }, SensorCount);
+
+  // ...
   setPinModes();
 
   loop(doc);
@@ -178,6 +191,9 @@ void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
       currentMove.moveType = eBelt;
       currentMove.params.beltParams.direction = obj["direction"];
       currentMove.params.beltParams.duration = obj["duration"];
+    } else if (moveType == "calibrate") {
+      currentMove.moveType = eCalibrate;
+      currentMove.params.calibrationParams.duration = obj["duration"];
     } else {
       // If move unknown,
       continue;  // Skip this move
@@ -215,12 +231,24 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
       case eBelt:
         executeBelt(nextMove);
         break;
+      case eCalibrate:
+        calibrate(nextMove);
+        break;
       default:
         DEBUG_PRINT("Unexpected moveType: ");
         DEBUG_PRINTLN(nextMove.moveType);
         break;
     }
   }
+}
+
+Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
+  Move retMove = queueToPopFrom->front();
+  //Move retMove = queueToPopFrom->back();
+
+  queueToPopFrom->pop();
+
+  return retMove;
 }
 
 void executeFreeDrive(Move nextMove) {
@@ -290,7 +318,6 @@ void executeLineFollow(Move nextMove) {
 
 // NOTE: THE DIRECTION OF THE MOTOR TO GO UP VS DOWN MAY NEED TO BE CHANGED!!!
 // If switches dont get triggered, this times out to avoid getting stuck in a loop
-// TODO: FIGURE OUT DIRECTION NOT WORKING
 void executeScissor(Move nextMove) {
   unsigned long targetHeight = nextMove.params.scissorParams.direction;
   unsigned long startTime = millis(); // Capture the start time
@@ -300,7 +327,7 @@ void executeScissor(Move nextMove) {
     DEBUG_PRINTLN("MOVING PLATFORM UP");
     // Move towards the top limit switch
     gL2Motors.setM2Speed(100);
-    while (digitalRead(topLimitSwitchPin) == LOW) {
+    while (digitalRead(topLimitSwitchPin) == HIGH) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
         DEBUG_PRINTLN("Timeout reached while moving up");
@@ -312,7 +339,7 @@ void executeScissor(Move nextMove) {
     DEBUG_PRINTLN("MOVING PLATFORM DOWN");
     // Move towards the bottom limit switch
     gL2Motors.setM2Speed(-100);
-    while (digitalRead(bottomLimitSwitchPin) == LOW) {
+    while (digitalRead(bottomLimitSwitchPin) == HIGH) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
         DEBUG_PRINTLN("Timeout reached while moving down");
@@ -325,7 +352,6 @@ void executeScissor(Move nextMove) {
   gL2Motors.setM2Speed(0); // Stop the motor once the limit switch is reached or timeout occurs
 }
 
-// TODO: FIGURE OUT DIRECTION NOT WORKING
 void executeBelt(Move nextMove) {
   unsigned long duration = nextMove.params.beltParams.duration;  // Duration in milliseconds
   bool direction = nextMove.params.beltParams.direction;         // Direction (1 is forward, 0 is backward)
@@ -346,15 +372,6 @@ void executeBelt(Move nextMove) {
 
   DEBUG_PRINTLN("Done moving belt.");
 
-}
-
-Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
-  Move retMove = queueToPopFrom->front();
-  //Move retMove = queueToPopFrom->back();
-
-  queueToPopFrom->pop();
-
-  return retMove;
 }
 
 void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds) {
@@ -380,8 +397,20 @@ void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds) {
   }
 }
 
-void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
+void calibrate(Move nextMove) {
+  // input 'nextMove' is not yet used. In future, it will have associated calibration types. For now, just calibrate everything.
+  // 10s is 400, so 1s is 40
+  int duration = nextMove.params.calibrationParams.duration / 1000; // convert to s
+  DEBUG_PRINTLN(duration);
+  gMecanumMotors.setSpeeds(200, 200, 200, 200);
+  for (uint16_t i = 0; i < 40 * duration; i++) {
+    qtr.calibrate();
+  }
+  gMecanumMotors.setSpeeds(0, 0, 0, 0);
+  DEBUG_PRINTLN("Done calibrating.");
+}
 
+void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
   for (int i = 0; i < cNumberOfWheels; i++) {
     wheelSpeeds[i] = map(wheelSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
   }
