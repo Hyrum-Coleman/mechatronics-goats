@@ -1,6 +1,10 @@
 {
   "g": [
     {
+      "type": "calibrate",
+      "duration": 6000
+    },
+    {
       "type": "linefollow",
       "stopDistance": 10
     }

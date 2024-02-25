@@ -286,6 +286,7 @@ void executeFreeDrive(Move nextMove) {
   }
 }
 
+// todo: get this working. currently stopping because distance threshold so the distance sensors are getting noisy values
 void executeLineFollow(Move nextMove) {
   float targetDistance = nextMove.params.linefollowParams.stopDistance;
 
@@ -296,8 +297,8 @@ void executeLineFollow(Move nextMove) {
     double Kp = 1.0 / 20.0;
 
     int baseSpeed = 200;  // Base speed for each motor
-    int leftSpeed = baseSpeed - (Kp * error);
-    int rightSpeed = baseSpeed + (Kp * error);
+    int leftSpeed = baseSpeed + (Kp * error);
+    int rightSpeed = baseSpeed - (Kp * error);
 
     // Set motor speeds based on line position
     gMecanumMotors.setSpeeds(leftSpeed, -rightSpeed, leftSpeed, -rightSpeed);
@@ -305,6 +306,9 @@ void executeLineFollow(Move nextMove) {
     // Check distance to wall using distance sensors
     float distanceLeft = pollRangefinder(distPin1);
     float distanceRight = pollRangefinder(distPin2);
+
+      DEBUG_PRINTLN(distanceLeft);
+      DEBUG_PRINTLN(distanceRight);
 
     // If close enough to the wall, stop
     if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
