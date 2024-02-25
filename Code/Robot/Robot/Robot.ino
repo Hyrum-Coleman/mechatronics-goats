@@ -294,7 +294,7 @@ void executeLineFollow(Move nextMove) {
 void executeScissor(Move nextMove) {
   unsigned long targetHeight = nextMove.params.scissorParams.direction;
   unsigned long startTime = millis(); // Capture the start time
-  unsigned long timeout = 5000; // Set timeout
+  unsigned long timeout = 3000; // Set timeout
 
   if (targetHeight == 1) {
     DEBUG_PRINTLN("MOVING PLATFORM UP");

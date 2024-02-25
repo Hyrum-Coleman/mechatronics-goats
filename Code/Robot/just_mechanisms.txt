@@ -1,0 +1,22 @@
+{
+  "g": [
+    {
+      "type": "scissor",
+      "direction": 1
+    },
+    {
+      "type": "scissor",
+      "direction": 0
+    },
+    {
+      "type": "belt",
+      "direction": 1,
+      "duration": 1000
+    },
+    {
+      "type": "belt",
+      "direction": 0,
+      "duration": 1000
+    }
+  ]
+}
