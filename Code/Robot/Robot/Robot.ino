@@ -33,7 +33,7 @@ const int topLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int bottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
 
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
-L298NMotorDriverMega gL2Motors(5, 32, 33, 6, 34, 35);
+L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 QTRSensors qtr;
 
