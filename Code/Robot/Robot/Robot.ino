@@ -117,7 +117,7 @@ void loop(JsonDocument& doc) {
         read_serial(doc);
         if (doc.isNull()) {
           continue;
-        } else if (doc.containsKey("d")) {
+        } else if (doc.containsKey("g")) {
           parseJsonIntoQueue(moveQueue, doc);
           state = eMoving;
         }
