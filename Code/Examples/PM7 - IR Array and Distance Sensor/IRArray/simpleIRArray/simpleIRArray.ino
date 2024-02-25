@@ -25,7 +25,7 @@ void setup()
   // CONFIGURE
   qtr.setTypeRC();
   qtr.setSensorPins((const uint8_t[]) {
-    36, 37, 38, 39, 40, 41, 42, 43
+    36, 38, 40, 42, 43, 41, 39, 37
   }, SensorCount);
 
   // BEGIN CALIBRATION -- MOVE AROUND OVER BLACK LINE FOR ~10s TO CALIBRATE.

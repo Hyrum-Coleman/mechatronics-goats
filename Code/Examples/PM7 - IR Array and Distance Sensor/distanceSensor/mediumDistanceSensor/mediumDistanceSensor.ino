@@ -4,8 +4,8 @@
 #include <DualTB9051FTGMotorShieldMod3230.h>
 
 // Define the pins for the distance sensors
-const int distPin1 = A4; // Left sensor
-const int distPin2 = A5; // Right sensor
+const int distPin1 = A5; // Left sensor
+const int distPin2 = A4; // Right sensor
 
 DualTB9051FTGMotorShieldMod3230 wheels;
 String message = "";

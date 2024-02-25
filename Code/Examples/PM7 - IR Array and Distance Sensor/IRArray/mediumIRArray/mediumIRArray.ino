@@ -10,11 +10,12 @@ DualTB9051FTGMotorShieldMod3230 wheels;
 
 void setup() {
   Serial2.begin(9600);
+  Serial2.println("Connected!");
 
   // Initialize line following sensors.
   qtr.setTypeRC();
   qtr.setSensorPins((const uint8_t[]) {
-    36, 37, 38, 39, 40, 41, 42, 43
+    36, 38, 40, 42, 43, 41, 39, 37
   }, SensorCount);
 
   // Calibrate for 10s -- MOVE THE ROBOT AROUND THE LINE DURING THIS TIME.
@@ -37,11 +38,11 @@ void loop() {
     // The range is 0 to 7000 ( because 8 sensors). Max is (_sensorCount - 1) * 1000.
     // Hence, 3500 is the middle.
     int error = position - 3500;
-    double Kp = 1.0 / 20.0;
+    double Kp = 1.0 / 10.0;
 
-    int baseSpeed = 200; // Base speed for each motor
-    int leftSpeed = baseSpeed - (Kp * error); // YOU MAY NEED TO FLIP THE + AND - HERE, IM GUESSING!!!!
-    int rightSpeed = baseSpeed + (Kp * error);
+    int baseSpeed = 300; // Base speed for each motor
+    int leftSpeed = baseSpeed + (Kp * error); // YOU MAY NEED TO FLIP THE + AND - HERE, IM GUESSING!!!!
+    int rightSpeed = baseSpeed - (Kp * error);
 
     // Set the speeds -- tank driving style
     wheels.setSpeeds(leftSpeed, -rightSpeed, leftSpeed, -rightSpeed);
