@@ -380,26 +380,28 @@ void executeBelt(Move nextMove) {
 
 }
 
-void runMotorsWithBlockingDelay(int delayTime, float* wheelSpeeds) {
-  if (wheelSpeeds) {
-    DEBUG_PRINTLN("Running wheel motors with blocking delay.");
+void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
+  if (targetWheelSpeeds) {
+    DEBUG_PRINTLN("Running wheel motors with blocking delay and speed ramp.");
 
-    // Map wheel speeds from their current values to a scale suitable for the motor drivers.
-    mapWheelSpeeds(wheelSpeeds, 200);  // changed this back to hardcoded value. should probably be a pound define.
+    // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
+    float mappedSpeeds[cNumberOfWheels];
+    memcpy(mappedSpeeds, targetWheelSpeeds, sizeof(mappedSpeeds)); // Copy to preserve original target speeds
+    mapWheelSpeeds(mappedSpeeds, 200);  // hard coded value shoud be changed at some point
 
-    // Set the motor speeds.
-    gMecanumMotors.setSpeeds(wheelSpeeds[0], -wheelSpeeds[1], wheelSpeeds[2], -wheelSpeeds[3]);
+    // Ramp speeds up to mapped target values over a period (e.g., 1000 milliseconds)
+    rampMotorSpeed(mappedSpeeds, 1000);
 
-    // Wait for the specified delay time.
+    // Wait for the specified delay time after ramping to the target speed.
     delay(delayTime);
 
-    // Turn off motors after the delay.
-    gMecanumMotors.setSpeeds(0, 0, 0, 0);
+    // Optionally, smoothly ramp down to 0 for a soft stop.
+    float stopSpeeds[cNumberOfWheels] = {0, 0, 0, 0};
+    rampMotorSpeed(stopSpeeds, 1000); // Smooth ramp down
 
     DEBUG_PRINTLN("Motors stopped.");
   } else {
-    // Log an error if wheelSpeeds is null.
-    DEBUG_PRINTLN("Error: wheelSpeeds is null.");
+    DEBUG_PRINTLN("Error: targetWheelSpeeds is null.");
   }
 }
 
