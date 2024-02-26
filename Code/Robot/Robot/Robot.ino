@@ -55,6 +55,7 @@ union MoveParameters {
 
   struct {
     unsigned long stopDistance;  // how far to stop away from obstacle when line following
+    int speed;
   } linefollowParams;            // For eLineFollow
 
   struct {
@@ -184,6 +185,7 @@ void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
     } else if (moveType == "linefollow") {
       currentMove.moveType = eLineFollow;
       currentMove.params.linefollowParams.stopDistance = obj["stopDistance"];
+      currentMove.params.linefollowParams.speed = obj["speed"];
     } else if (moveType == "scissor") {
       currentMove.moveType = eScissor;
       currentMove.params.scissorParams.direction = obj["direction"];
@@ -289,6 +291,7 @@ void executeFreeDrive(Move nextMove) {
 // todo: get this working. currently stopping because distance threshold so the distance sensors are getting noisy values
 void executeLineFollow(Move nextMove) {
   float targetDistance = nextMove.params.linefollowParams.stopDistance;
+  int baseSpeed = nextMove.params.linefollowParams.speed;
 
   while (true) {
     // Perform line following logic
@@ -296,7 +299,6 @@ void executeLineFollow(Move nextMove) {
     int error = position - 3500;  // Center is 3500 for 8 sensors
     double Kp = 1.0 / 20.0;
 
-    int baseSpeed = 200;  // Base speed for each motor
     int leftSpeed = baseSpeed + (Kp * error);
     int rightSpeed = baseSpeed - (Kp * error);
 
