@@ -422,6 +422,33 @@ void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
   }
 }
 
+// Function to ramp motor speed from 0 to targetSpeed over a specified duration
+void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration) {
+  unsigned long rampStartTime = millis();
+  unsigned long currentTime;
+  float currentSpeed[cNumberOfWheels] = {0, 0, 0, 0}; // Start speeds at 0
+
+  while (true) {
+    currentTime = millis() - rampStartTime;
+    float rampProgress = (float)currentTime / (float)rampDuration;
+
+    if (rampProgress >= 1.0) {
+      // If ramp is complete, ensure target speed is set
+      memcpy(currentSpeed, targetWheelSpeeds, sizeof(currentSpeed));
+      gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
+      break; // Exit loop
+    } else {
+      // Calculate and set intermediate speeds
+      for (int i = 0; i < cNumberOfWheels; i++) {
+        currentSpeed[i] = targetWheelSpeeds[i] * rampProgress;
+      }
+      gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
+    }
+
+    delay(10); // Small delay to avoid updating too frequently
+  }
+}
+
 float pollRangefinder(int pin) {
   int sensorValue = analogRead(pin);
   float voltage = sensorValue * (5.0 / 1023.0);
