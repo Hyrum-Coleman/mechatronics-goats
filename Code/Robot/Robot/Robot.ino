@@ -24,13 +24,20 @@
 //#include <DualTB9051FTGMotorShieldBarebones.h>
 
 // Global variables :(
+// QUANTITIES
 const int cNumberOfWheels = 4;
 const uint8_t SensorCount = 8;
-uint16_t sensorValues[SensorCount];
+// PARAMETERS
+const int MA_WINDOW_SIZE = 5;
+// PINS
 const int distPin1 = A4;              // Left IR rangefinder sensor
 const int distPin2 = A5;              // Right IR rangefinder sensor
 const int topLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int bottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
+// DATASTRUCTURES
+uint16_t sensorValues[SensorCount];
+std::queue<float> distSensor1Readings;
+std::queue<float> distSensor2Readings;
 
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
@@ -56,7 +63,7 @@ union MoveParameters {
   struct {
     unsigned long stopDistance;  // how far to stop away from obstacle when line following
     int speed;
-  } linefollowParams;            // For eLineFollow
+  } linefollowParams;  // For eLineFollow
 
   struct {
     bool direction;  // which way to move the scissor jack. 1 for up 0 for down.
@@ -66,7 +73,7 @@ union MoveParameters {
     bool direction;          // which way to drive the belt
     unsigned long duration;  // how long to drive the belt
   } beltParams;              // For belt
-  
+
   struct {
     unsigned long duration;  // How long to calibrate line follower
   } calibrationParams;       // For calibrating sensors
@@ -108,9 +115,9 @@ int main() {
 
   // initialize IR array
   qtr.setTypeRC();
-  qtr.setSensorPins((const uint8_t[]) {
-    36, 38, 40, 42, 43, 41, 39, 37
-  }, SensorCount);
+  qtr.setSensorPins((const uint8_t[]){
+                      36, 38, 40, 42, 43, 41, 39, 37 },
+                    SensorCount);
 
   // ...
   setPinModes();
@@ -308,9 +315,13 @@ void executeLineFollow(Move nextMove) {
     // Check distance to wall using distance sensors
     float distanceLeft = pollRangefinder(distPin1);
     float distanceRight = pollRangefinder(distPin2);
+    // Check filtered distance to wall using distance sensors
+    //float distanceLeft = pollRangefinderWithSMA(distPin1, distSensor1Readings); // distSensor1Readings is a global
+    //float distanceRight = pollRangefinderWithSMA(distPin2, distSensor2Readings); // distSensor2Readings is a global
 
-      DEBUG_PRINTLN(distanceLeft);
-      DEBUG_PRINTLN(distanceRight);
+
+    DEBUG_PRINTLN(distanceLeft);
+    DEBUG_PRINTLN(distanceRight);
 
     // If close enough to the wall, stop
     if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
@@ -326,8 +337,8 @@ void executeLineFollow(Move nextMove) {
 // If switches dont get triggered, this times out to avoid getting stuck in a loop
 void executeScissor(Move nextMove) {
   unsigned long targetHeight = nextMove.params.scissorParams.direction;
-  unsigned long startTime = millis(); // Capture the start time
-  unsigned long timeout = 3000; // Set timeout
+  unsigned long startTime = millis();  // Capture the start time
+  unsigned long timeout = 3000;        // Set timeout
 
   if (targetHeight == 1) {
     DEBUG_PRINTLN("MOVING PLATFORM UP");
@@ -337,9 +348,9 @@ void executeScissor(Move nextMove) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
         DEBUG_PRINTLN("Timeout reached while moving up");
-        break; // Exit the loop if the timeout is exceeded
+        break;  // Exit the loop if the timeout is exceeded
       }
-      delay(10); // Small delay to prevent too rapid polling
+      delay(10);  // Small delay to prevent too rapid polling
     }
   } else if (targetHeight == 0) {
     DEBUG_PRINTLN("MOVING PLATFORM DOWN");
@@ -349,26 +360,25 @@ void executeScissor(Move nextMove) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
         DEBUG_PRINTLN("Timeout reached while moving down");
-        break; // Exit the loop if the timeout is exceeded
+        break;  // Exit the loop if the timeout is exceeded
       }
-      delay(10); // Small delay to prevent too rapid polling
+      delay(10);  // Small delay to prevent too rapid polling
     }
   }
 
-  gL2Motors.setM2Speed(0); // Stop the motor once the limit switch is reached or timeout occurs
+  gL2Motors.setM2Speed(0);  // Stop the motor once the limit switch is reached or timeout occurs
 }
 
 void executeBelt(Move nextMove) {
   unsigned long duration = nextMove.params.beltParams.duration;  // Duration in milliseconds
   bool direction = nextMove.params.beltParams.direction;         // Direction (1 is forward, 0 is backward)
-  
+
   // Determine speed based on direction
   int speed = direction ? 400 : -400;  // Assume positive speed for forward, negative for backward
-  
+
   if (speed == 400) {
     DEBUG_PRINTLN("MOVING BELT FORWARD");
-  }
-  else {
+  } else {
     DEBUG_PRINTLN("MOVING BELT BACKWARD");
   }
 
@@ -377,7 +387,6 @@ void executeBelt(Move nextMove) {
   gL2Motors.setM1Speed(0);      // Stop the belt
 
   DEBUG_PRINTLN("Done moving belt.");
-
 }
 
 void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
@@ -386,8 +395,8 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
 
     // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
     float mappedSpeeds[cNumberOfWheels];
-    memcpy(mappedSpeeds, targetWheelSpeeds, sizeof(mappedSpeeds)); // Copy to preserve original target speeds
-    mapWheelSpeeds(mappedSpeeds, 200);  // hard coded value shoud be changed at some point
+    memcpy(mappedSpeeds, targetWheelSpeeds, sizeof(mappedSpeeds));  // Copy to preserve original target speeds
+    mapWheelSpeeds(mappedSpeeds, 200);                              // hard coded value shoud be changed at some point
 
     // Ramp speeds up to mapped target values over a period (e.g., 1000 milliseconds)
     rampMotorSpeed(mappedSpeeds, 1000);
@@ -396,8 +405,8 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
     delay(delayTime);
 
     // Optionally, smoothly ramp down to 0 for a soft stop.
-    float stopSpeeds[cNumberOfWheels] = {0, 0, 0, 0};
-    rampMotorSpeed(stopSpeeds, 1000); // Smooth ramp down
+    float stopSpeeds[cNumberOfWheels] = { 0, 0, 0, 0 };
+    rampMotorSpeed(stopSpeeds, 1000);  // Smooth ramp down
 
     DEBUG_PRINTLN("Motors stopped.");
   } else {
@@ -408,7 +417,7 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
 void calibrate(Move nextMove) {
   // input 'nextMove' is not yet used. In future, it will have associated calibration types. For now, just calibrate everything.
   // 10s is 400, so 1s is 40
-  int duration = nextMove.params.calibrationParams.duration / 1000; // convert to s
+  int duration = nextMove.params.calibrationParams.duration / 1000;  // convert to s
   DEBUG_PRINTLN(duration);
   gMecanumMotors.setSpeeds(200, 200, 200, 200);
   for (uint16_t i = 0; i < 40 * duration; i++) {
@@ -428,7 +437,7 @@ void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
 void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration) {
   unsigned long rampStartTime = millis();
   unsigned long currentTime;
-  float currentSpeed[cNumberOfWheels] = {0, 0, 0, 0}; // Start speeds at 0
+  float currentSpeed[cNumberOfWheels] = { 0, 0, 0, 0 };  // Start speeds at 0
 
   while (true) {
     currentTime = millis() - rampStartTime;
@@ -438,7 +447,7 @@ void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration) {
       // If ramp is complete, ensure target speed is set
       memcpy(currentSpeed, targetWheelSpeeds, sizeof(currentSpeed));
       gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
-      break; // Exit loop
+      break;  // Exit loop
     } else {
       // Calculate and set intermediate speeds
       for (int i = 0; i < cNumberOfWheels; i++) {
@@ -447,7 +456,7 @@ void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration) {
       gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
     }
 
-    delay(10); // Small delay to avoid updating too frequently
+    delay(10);  // Small delay to avoid updating too frequently
   }
 }
 
@@ -456,6 +465,27 @@ float pollRangefinder(int pin) {
   float voltage = sensorValue * (5.0 / 1023.0);
   float distance = 33.9 - 69.5 * voltage + 62.3 * pow(voltage, 2) - 25.4 * pow(voltage, 3) + 3.83 * pow(voltage, 4);
   return distance;
+}
+
+float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
+  int sensorValue = analogRead(pin);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  float distance = 33.9 - 69.5 * voltage + 62.3 * pow(voltage, 2) - 25.4 * pow(voltage, 3) + 3.83 * pow(voltage, 4);
+
+  // Add new reading to the queue
+  if (readingsQueue.size() >= MA_WINDOW_SIZE) {
+    readingsQueue.pop();  // Remove the oldest reading if we've reached capacity
+  }
+  readingsQueue.push(distance);
+
+  // Calculate the moving average
+  float sum = 0;
+  for (std::queue<float> tempQueue = readingsQueue; !tempQueue.empty(); tempQueue.pop()) {
+    sum += tempQueue.front();
+  }
+  float averageDistance = sum / readingsQueue.size();
+
+  return averageDistance;
 }
 
 void setPinModes() {
