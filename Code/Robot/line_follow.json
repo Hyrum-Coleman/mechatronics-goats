@@ -6,8 +6,8 @@
     },
     {
       "type": "linefollow",
-      "stopDistance": 10,
-      "speed": 200,
+      "stopDistance": 5,
+      "speed": 200
     }
   ]
 }
