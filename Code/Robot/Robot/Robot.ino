@@ -19,6 +19,7 @@
 #include <QTRSensors.h>
 #include <queue>
 #include "Wheelbase.h"
+#include "types.h"
 
 // Global variables :(
 // QUANTITIES
@@ -31,7 +32,7 @@ const int distPin1 = A4;              // Left IR rangefinder sensor
 const int distPin2 = A5;              // Right IR rangefinder sensor
 const int topLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int bottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
-// DATASTRUCTURES
+
 uint16_t sensorValues[SensorCount];
 std::queue<float> distSensor1Readings;
 std::queue<float> distSensor2Readings;
@@ -40,60 +41,6 @@ DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 QTRSensors qtr;
-
-// Structs and enums
-enum MoveType {
-  eFreeDrive = 0,
-  eLineFollow = 1,
-  eScissor = 2,
-  eBelt = 3,
-  eCalibrate = 4,
-};
-
-// Onion for move-specific parameters
-union MoveParameters {
-  struct {
-    unsigned short direction;  // which way to drive (will be [x,y,theta] in the future)
-    unsigned long duration;    // how far to go (will be distance not time in the future)
-  } freedriveParams;           // For eFreeDrive
-
-  struct {
-    unsigned long stopDistance;  // how far to stop away from obstacle when line following
-    int speed;
-  } linefollowParams;  // For eLineFollow
-
-  struct {
-    bool direction;  // which way to move the scissor jack. 1 for up 0 for down.
-  } scissorParams;   // For eScissor
-
-  struct {
-    bool direction;          // which way to drive the belt
-    unsigned long duration;  // how long to drive the belt
-  } beltParams;              // For belt
-
-  struct {
-    unsigned long duration;  // How long to calibrate line follower
-  } calibrationParams;       // For calibrating sensors
-};
-
-struct Move {
-  MoveType moveType;
-  MoveParameters params;
-};
-
-enum States {
-  eMoving = 0,
-  eWaitingToStart = 1,
-};
-
-enum Directions {
-  eForwards = 1,
-  eLeft = 2,
-  eBackwards = 3,
-  eRight = 4,
-  eCCW = 5,
-  eCW = 6,
-};
 
 int main() {
   init();  // Initialize board itself
@@ -155,29 +102,30 @@ void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
     Move currentMove;
 
     // Populate move structs params based on move type
-    String moveType = obj["type"].as<String>();
-    if (moveType == "freedrive") {
-      currentMove.moveType = eFreeDrive;
-      currentMove.params.freedriveParams.direction = obj["direction"];
-      currentMove.params.freedriveParams.duration = obj["duration"];
-    } else if (moveType == "linefollow") {
-      currentMove.moveType = eLineFollow;
-      currentMove.params.linefollowParams.stopDistance = obj["stopDistance"];
-      currentMove.params.linefollowParams.speed = obj["speed"];
-    } else if (moveType == "scissor") {
-      currentMove.moveType = eScissor;
-      currentMove.params.scissorParams.direction = obj["direction"];
-    } else if (moveType == "belt") {
-      currentMove.moveType = eBelt;
-      currentMove.params.beltParams.direction = obj["direction"];
-      currentMove.params.beltParams.duration = obj["duration"];
-    } else if (moveType == "calibrate") {
-      currentMove.moveType = eCalibrate;
-      currentMove.params.calibrationParams.duration = obj["duration"];
-    } else {
-      // If move unknown,
-      continue;  // Skip this move
-    }
+    MoveType moveType = obj["type"].as<MoveType>();
+    currentMove.moveType = moveType;
+    switch (currentMove.moveType) {
+      case MoveType::eFreeDrive:
+        currentMove.params.freedriveParams.direction = obj["direction"].as<Directions>();
+        currentMove.params.freedriveParams.duration = obj["duration"];
+        break;
+      case MoveType::eLineFollow:
+        currentMove.params.linefollowParams.stopDistance = obj["stopDistance"];
+        currentMove.params.linefollowParams.speed = obj["speed"];
+        break;
+      case MoveType::eScissor:
+        currentMove.params.scissorParams.direction = obj["direction"];
+        break;
+      case MoveType::eBelt:
+        currentMove.params.beltParams.direction = obj["direction"];
+        currentMove.params.beltParams.duration = obj["duraction"];
+        break;
+      case MoveType::eCalibrate:
+        currentMove.params.calibrationParams.duration = obj["duration"];
+        break;
+      default:
+        DEBUG_PRINTLN("Unexpected type");
+    };
     moveQueue->push(currentMove);
   }
 }
@@ -196,7 +144,7 @@ void read_serial(JsonDocument& doc) {
 }
 
 void executeMoveSequence(std::queue<Move>* moveQueue) {
-  while (!moveQueue->empty()) { 
+  while (!moveQueue->empty()) {
     Move nextMove = getNextMoveFromQueue(moveQueue);
     switch (nextMove.moveType) {
       case eFreeDrive:
@@ -224,7 +172,6 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
 
 Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
   Move retMove = queueToPopFrom->front();
-
   queueToPopFrom->pop();
 
   return retMove;
