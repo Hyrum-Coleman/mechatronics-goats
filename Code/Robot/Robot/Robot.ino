@@ -19,9 +19,6 @@
 #include <QTRSensors.h>
 #include <queue>
 #include "Wheelbase.h"
-// Custom versions of libraries to debug (kinda useless)
-//#include "L298NMotorDriver.h"
-//#include <DualTB9051FTGMotorShieldBarebones.h>
 
 // Global variables :(
 // QUANTITIES
@@ -153,32 +150,6 @@ void loop(JsonDocument& doc) {
   // -------------------------------------------------
 }
 
-// New JSON format.
-// Needs to be abbreviated to save bytes.
-// Suggest: x for type, d for direction, t for duration, f l s and b fir types.
-/*
-{
-  "g": [
-    {
-      "type": "freedrive",
-      "direction": 1,
-      "duration": 5000
-    },
-    {
-      "type": "linefollow",
-      "stopDistance": 100
-    },
-    {
-      "type": "scissor",
-      "direction": 1, // 1 or 0 for top and bottom
-    },
-    {
-      "type": "belt",
-      "duration": 2000
-    }
-  ]
-}
-*/
 void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
   for (JsonObject obj : doc["g"].as<JsonArray>()) {  // g for go
     Move currentMove;
@@ -225,7 +196,7 @@ void read_serial(JsonDocument& doc) {
 }
 
 void executeMoveSequence(std::queue<Move>* moveQueue) {
-  while (!moveQueue->empty()) {  // Loop until the queue is empty
+  while (!moveQueue->empty()) { 
     Move nextMove = getNextMoveFromQueue(moveQueue);
     switch ((MoveType)nextMove.moveType) {
       case eFreeDrive:
@@ -253,7 +224,6 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
 
 Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
   Move retMove = queueToPopFrom->front();
-  //Move retMove = queueToPopFrom->back();
 
   queueToPopFrom->pop();
 
