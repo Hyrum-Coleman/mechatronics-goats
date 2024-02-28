@@ -198,7 +198,7 @@ void read_serial(JsonDocument& doc) {
 void executeMoveSequence(std::queue<Move>* moveQueue) {
   while (!moveQueue->empty()) { 
     Move nextMove = getNextMoveFromQueue(moveQueue);
-    switch ((MoveType)nextMove.moveType) {
+    switch (nextMove.moveType) {
       case eFreeDrive:
         executeFreeDrive(nextMove);
         break;
