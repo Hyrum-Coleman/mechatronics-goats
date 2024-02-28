@@ -264,7 +264,7 @@ void executeFreeDrive(Move nextMove) {
   float wheelSpeeds[cNumberOfWheels];  // Initialize motor speeds
   int delayTime = nextMove.params.freedriveParams.duration;
 
-  switch ((Directions)nextMove.params.freedriveParams.direction) {
+  switch (nextMove.params.freedriveParams.direction) {
     case eForwards:
       gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
       runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
