@@ -315,15 +315,14 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
     memcpy(mappedSpeeds, targetWheelSpeeds, sizeof(mappedSpeeds));  // Copy to preserve original target speeds
     mapWheelSpeeds(mappedSpeeds, 200);                              // hard coded value shoud be changed at some point
 
-    // Ramp speeds up to mapped target values over a period (e.g., 1000 milliseconds)
-    rampMotorSpeed(mappedSpeeds, 1000);
+    // Ramp speeds up to mapped target values over a period (e.g., 200 milliseconds)
+    rampMotorSpeed(mappedSpeeds, 200, true); // true ramps up
 
     // Wait for the specified delay time after ramping to the target speed.
     delay(delayTime);
 
     // Optionally, smoothly ramp down to 0 for a soft stop.
-    float stopSpeeds[cNumberOfWheels] = { 0, 0, 0, 0 };
-    rampMotorSpeed(stopSpeeds, 1000);  // Smooth ramp down
+    rampMotorSpeed(mappedSpeeds, 200, false);  // false ramps down
 
     DEBUG_PRINTLN("Motors stopped.");
   } else {
@@ -351,7 +350,7 @@ void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
 }
 
 // Function to ramp motor speed from 0 to targetSpeed over a specified duration
-void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration) {
+void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration, bool rampDirection) {
   unsigned long rampStartTime = millis();
   unsigned long currentTime;
   float currentSpeed[cNumberOfWheels] = { 0, 0, 0, 0 };  // Start speeds at 0
@@ -362,13 +361,26 @@ void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration) {
 
     if (rampProgress >= 1.0) {
       // If ramp is complete, ensure target speed is set
-      memcpy(currentSpeed, targetWheelSpeeds, sizeof(currentSpeed));
-      gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
+      if (rampDirection == true) {
+        memcpy(currentSpeed, targetWheelSpeeds, sizeof(currentSpeed));
+        gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
+      }
+      else {
+        gMecanumMotors.setSpeeds(0, 0, 0, 0);
+      }
       break;  // Exit loop
     } else {
       // Calculate and set intermediate speeds
       for (int i = 0; i < cNumberOfWheels; i++) {
-        currentSpeed[i] = targetWheelSpeeds[i] * rampProgress;
+        if (rampDirection == true) {
+        //ramp up
+          currentSpeed[i] = targetWheelSpeeds[i] * rampProgress;
+        }
+        else 
+        {
+          // ramp down
+          currentSpeed[i] = targetWheelSpeeds[i] * (1-rampProgress);
+        }
       }
       gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
     }
