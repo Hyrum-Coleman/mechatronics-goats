@@ -88,7 +88,7 @@ void loop(JsonDocument& doc) {
   while (true) {
     switch (state) {
       case eStandby:
-        waitingToStart(doc, moveQueue, state);
+        standBy(doc, moveQueue, state);
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
@@ -100,20 +100,24 @@ void loop(JsonDocument& doc) {
   // -------------------------------------------------
 }
 
-void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
+void standBy(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
   DEBUG_PRINT("STANDBY... <");
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
   // Check IR Reciever for IR signal to decode
   if (IrReceiver.decode()) {
     // note: FFFFFF is a repeat command. You get it while you hold a button down.
-    Serial.println(IrReceiver.decodedIRData.command);
     switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
       case RemoteButtons::ePwr:  // PWR
-        Serial.println("POWER");
+        // Change mode here in the future
         break;
       case RemoteButtons::eVolPlus:  // VOL+
-        Serial.println("VOLPLUS");
+        // Drive forwards
+        Move move;
+        move.moveType = MoveType::eFreeDrive;
+        move.params.freedriveParams.direction = Directions::eForwards;
+        move.params.freedriveParams.duration = gRemoteControlDuration;
+        executeFreeDrive(move);
         break;
       case RemoteButtons::eFuncStop:  // FUNC/STOP
         // Handle FUNC/STOP button press
@@ -229,8 +233,9 @@ void read_serial(JsonDocument& doc) {
 
   // Test if parsing succeeds.
   if (error) {
-    Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.f_str());
+    //Commented because I'm using serial and its getting annoying
+    //Serial.print(F("deserializeJson() failed: "));
+    //Serial.println(error.f_str());
     return;
   }
 }
