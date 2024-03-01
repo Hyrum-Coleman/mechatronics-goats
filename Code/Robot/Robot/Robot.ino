@@ -25,21 +25,21 @@
 // Global variables :(
 // QUANTITIES
 const int cNumberOfWheels = 4;
-const uint8_t SensorCount = 8;
+const uint8_t cSensorCount = 8;
 // PARAMETERS
-const int MA_WINDOW_SIZE = 20;
+const int cFilterWindowSize = 20;
 // PINS
-const int distPin1 = A4;              // Left IR rangefinder sensor
-const int distPin2 = A5;              // Right IR rangefinder sensor
-const int topLimitSwitchPin = 53;     // Replace XX with the actual pin number
-const int bottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
-const int RECV_PIN = 11;              // IR Reciever
+const int cDistPin1 = A4;              // Left IR rangefinder sensor
+const int cDistPin2 = A5;              // Right IR rangefinder sensor
+const int cTopLimitSwitchPin = 53;     // Replace XX with the actual pin number
+const int cBottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
+const int cIrRecvPin = 11;              // IR Reciever
 
 // Sensor globals
-uint16_t sensorValues[SensorCount];
-std::queue<float> distSensor1Readings;
-std::queue<float> distSensor2Readings;
-QTRSensors qtr;
+uint16_t sensorValues[cSensorCount];
+std::queue<float> gDistSensor1Readings;
+std::queue<float> gDistSensor2Readings;
+QTRSensors gQtr;
 
 // Motor globals
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
@@ -47,12 +47,8 @@ L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 
 // IR reciever globals
-IRrecv irrecv(RECV_PIN);
-decode_results results;
-
-// Control flow globals :(
-std::queue<Move>* moveQueue = new std::queue<Move>();
-States state = eWaitingToStart;
+IRrecv gIrReciever(cIrRecvPin);
+decode_results gIrDecodeResults;
 
 int main() {
   init();  // Initialize board itself
@@ -70,13 +66,13 @@ int main() {
   gL2Motors.init();
 
   // initialize IR array
-  qtr.setTypeRC();
-  qtr.setSensorPins((const uint8_t[]){
+  gQtr.setTypeRC();
+  gQtr.setSensorPins((const uint8_t[]){
                       36, 38, 40, 42, 43, 41, 39, 37 },
-                    SensorCount);
+                    cSensorCount);
 
   // Start the IR Reciever
-  irrecv.enableIRIn();  // Start the receiver
+  gIrReciever.enableIRIn();  // Start the receiver
 
   // ...
   setPinModes();
@@ -85,12 +81,16 @@ int main() {
 }
 
 void loop(JsonDocument& doc) {
+  // Control flow globals :(
+  std::queue<Move>* moveQueue = new std::queue<Move>();
+  States state = eWaitingToStart;
+
   // LOOP BEGINS
   // -------------------------------------------------
   while (true) {
     switch (state) {
       case eWaitingToStart:
-        waitingToStart(doc);
+        waitingToStart(doc, moveQueue, state);
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
@@ -102,7 +102,7 @@ void loop(JsonDocument& doc) {
   // -------------------------------------------------
 }
 
-void waitingToStart(JsonDocument& doc) {
+void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
   DEBUG_PRINTLN("WAITING TO START");
   // Check serial for JSON packet to decide
   read_serial(doc);
@@ -113,10 +113,10 @@ void waitingToStart(JsonDocument& doc) {
     state = eMoving;
   }
   // Check IR Reciever for IR signal to decode
-  if (irrecv.decode(&results)) {
+  if (gIrReciever.decode(&gIrDecodeResults)) {
     // note: FFFFFF is a repeat command. You get it while you hold a button down.
-    Serial2.println(results.value, HEX);
-    switch (results.value) {
+    Serial2.println(gIrDecodeResults.value, HEX);
+    switch (gIrDecodeResults.value) {
       case 0xFD00FF:  // PWR
         // Handle PWR button press
         break;
@@ -184,7 +184,7 @@ void waitingToStart(JsonDocument& doc) {
         // Handle unknown or repeat command
         break;
     }
-    irrecv.resume();  // Receive  the next value
+    gIrReciever.resume();  // Receive  the next value
   }
 }
 
@@ -316,8 +316,8 @@ void executeLineFollow(Move nextMove) {
 
   while (true) {
     // Poll the rangefinders continuously
-    float distanceLeft = pollRangefinderWithSMA(distPin1, distSensor1Readings);
-    float distanceRight = pollRangefinderWithSMA(distPin2, distSensor2Readings);
+    float distanceLeft = pollRangefinderWithSMA(cDistPin1, gDistSensor1Readings);
+    float distanceRight = pollRangefinderWithSMA(cDistPin2, gDistSensor2Readings);
 
     // If close enough to the wall, stop
     if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
@@ -330,7 +330,7 @@ void executeLineFollow(Move nextMove) {
     // Non-blocking delay logic for motor speed adjustments
     if (currentMillis - lastMotorUpdateTime >= motorUpdateInterval) {
       // Perform line following logic
-      uint16_t position = qtr.readLineBlack(sensorValues);
+      uint16_t position = gQtr.readLineBlack(sensorValues);
       int error = position - 3500;         // Center is 3500 for 8 sensors
       int derivative = error - lastError;  // Calculate derivative. This is over 100ms because thats the motor update interval.
 
@@ -361,7 +361,7 @@ void executeScissor(Move nextMove) {
     DEBUG_PRINTLN("MOVING PLATFORM UP");
     // Move towards the top limit switch
     gL2Motors.setM2Speed(100);
-    while (digitalRead(topLimitSwitchPin) == HIGH) {
+    while (digitalRead(cTopLimitSwitchPin) == HIGH) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
         DEBUG_PRINTLN("Timeout reached while moving up");
@@ -373,7 +373,7 @@ void executeScissor(Move nextMove) {
     DEBUG_PRINTLN("MOVING PLATFORM DOWN");
     // Move towards the bottom limit switch
     gL2Motors.setM2Speed(-100);
-    while (digitalRead(bottomLimitSwitchPin) == HIGH) {
+    while (digitalRead(cBottomLimitSwitchPin) == HIGH) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
         DEBUG_PRINTLN("Timeout reached while moving down");
@@ -437,7 +437,7 @@ void calibrate(Move nextMove) {
   DEBUG_PRINTLN(duration);
   gMecanumMotors.setSpeeds(200, 200, 200, 200);
   for (uint16_t i = 0; i < 40 * duration; i++) {
-    qtr.calibrate();
+    gQtr.calibrate();
   }
   gMecanumMotors.setSpeeds(0, 0, 0, 0);
   DEBUG_PRINTLN("Done calibrating.");
@@ -499,7 +499,7 @@ float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
   float distance = 33.9 - 69.5 * voltage + 62.3 * pow(voltage, 2) - 25.4 * pow(voltage, 3) + 3.83 * pow(voltage, 4);
 
   // Add new reading to the queue
-  if (readingsQueue.size() >= MA_WINDOW_SIZE) {
+  if (readingsQueue.size() >= cFilterWindowSize) {
     readingsQueue.pop();  // Remove the oldest reading if we've reached capacity
   }
   readingsQueue.push(distance);
@@ -515,6 +515,6 @@ float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
 }
 
 void setPinModes() {
-  pinMode(topLimitSwitchPin, INPUT);
-  pinMode(bottomLimitSwitchPin, INPUT);
+  pinMode(cTopLimitSwitchPin, INPUT);
+  pinMode(cBottomLimitSwitchPin, INPUT);
 }
