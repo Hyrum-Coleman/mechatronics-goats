@@ -22,7 +22,7 @@
 #include "types.h"
 // these are both for IR reciever library
 //#include "PinDefinitionsAndMore.h"
-#include <IRremote.hpp> // include the library
+#include <IRremote.hpp>  // include the library
 
 // Global variables :(
 // QUANTITIES
@@ -30,12 +30,15 @@ const int cNumberOfWheels = 4;
 const uint8_t cSensorCount = 8;
 // PARAMETERS
 const int cFilterWindowSize = 20;
+int gDriveSpeed = 200;
+int gRemoteControlDuration = 1000;
+AdjustmentSubModes gCurrentAdjustmentSubMode = eNotAdjusting;
 // PINS
 const int cDistPin1 = A4;              // Left IR rangefinder sensor
 const int cDistPin2 = A5;              // Right IR rangefinder sensor
 const int cTopLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int cBottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
-const int cIrRecievePin = 11;             // IR Reciever
+const int cIrRecievePin = 11;          // IR Reciever
 
 // Sensor globals
 uint16_t sensorValues[cSensorCount];
@@ -70,7 +73,7 @@ int main() {
                      cSensorCount);
 
   // Start the IR Reciever
-  IrReceiver.begin(cIrRecievePin, true); // true for enable IR feedback
+  IrReceiver.begin(cIrRecievePin, true);  // true for enable IR feedback
 
   // ...
   setPinModes();
@@ -81,115 +84,120 @@ int main() {
 void loop(JsonDocument& doc) {
   // Control flow globals :(
   std::queue<Move>* moveQueue = new std::queue<Move>();
-  States state = eStandby;
+  States state = eStandbyIR;
 
   // LOOP BEGINS
   // -------------------------------------------------
   while (true) {
     switch (state) {
-      case eStandby:
-        standBy(doc, moveQueue, state);
+      case eStandbyJSON:
+        standbyJSON(doc, moveQueue, state);
+        break;
+      case eStandbyIR:
+        standbyIR(doc, moveQueue, state);
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
-        // Done executing moves
-        state = eStandby;
+        state = eStandbyIR;  // Return to the default IR standby mode after executing moves
         break;
+      case eAdjustmentMode:
+        adjustmentModeAction(state);
+        break;
+        // Other cases as needed
     }
   }
   // -------------------------------------------------
 }
 
-void standBy(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
-  DEBUG_PRINT("STANDBY... <");
+void standbyJSON(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
+  DEBUG_PRINT("STANDBY JSON... <");
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
-  // Check IR Reciever for IR signal to decode
+
+  // Check IR Receiver specifically for the power button press to toggle state
   if (IrReceiver.decode()) {
-    // note: FFFFFF is a repeat command. You get it while you hold a button down.
+    if ((RemoteButtons)IrReceiver.decodedIRData.command == RemoteButtons::ePwr) {
+      state = (state == eStandbyJSON) ? eStandbyIR : eStandbyJSON;
+      DEBUG_PRINTLN("Toggle state: Switching to IR mode");
+    }
+    IrReceiver.resume();
+    delay(100);  //debounce
+    return;     // Early return to avoid JSON processing if power button was pressed
+  }
+
+  // Continue with JSON processing only if the power button was not pressed
+  read_serial(doc);                             // Attempt to read and parse JSON from Serial
+  if (!doc.isNull() && doc.containsKey("g")) {  // Check if JSON contains expected data
+    parseJsonIntoQueue(moveQueue, doc);         // Parse commands into move queue
+    state = eMoving;                            // Switch to moving state to execute parsed commands
+  }
+}
+
+void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
+  DEBUG_PRINT("STANDBY IR... <");
+  DEBUG_PRINT(millis() / 1000.0);
+  DEBUG_PRINTLN(">");
+
+  if (IrReceiver.decode()) {
+    Move move;
     switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
-      case RemoteButtons::ePwr:  // PWR
-        // Change mode here in the future
+      case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
+        state = (state == eStandbyIR) ? eStandbyJSON : eStandbyIR;
+        DEBUG_PRINTLN("Toggle state: Switching modes");
         break;
-      case RemoteButtons::eVolPlus:  // VOL+
-        // Drive forwards
-        Move move;
-        move.moveType = MoveType::eFreeDrive;
-        move.params.freedriveParams.direction = Directions::eForwards;
-        move.params.freedriveParams.duration = gRemoteControlDuration;
+      case RemoteButtons::eVolPlus:      // Drive forwards
+      case RemoteButtons::eBack:         // Drive left
+      case RemoteButtons::eFastForward:  // Drive right
+      case RemoteButtons::eDown:         // Rotate counterclockwise
+      case RemoteButtons::eVolMinus:     // Drive backwards
+      case RemoteButtons::eUp:           // Rotate clockwise
+        // For each of these cases, setup the move according to the button press
+        move = setupMoveFromIRCommand((RemoteButtons)IrReceiver.decodedIRData.command);
         executeFreeDrive(move);
         break;
-      case RemoteButtons::eFuncStop:  // FUNC/STOP
-        // Handle FUNC/STOP button press
+      case RemoteButtons::eFuncStop:  // Enter adjustment mode
+        state = eAdjustmentMode;
+        gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset to not adjusting
+        DEBUG_PRINTLN("Entering adjustment mode");
         break;
-      case RemoteButtons::eBack:  // |<<
-        // Handle |<< button press
-        break;
-      case RemoteButtons::eForward:  // >|
-        // Handle >| button press
-        break;
-      case RemoteButtons::eFastForward:  // >>|
-        // Handle >>| button press
-        break;
-      case RemoteButtons::eDown:  // DOWN
-        // Handle DOWN button press
-        break;
-      case RemoteButtons::eVolMinus:  // VOL-
-        // Handle VOL- button press
-        break;
-      case RemoteButtons::eUp:  // UP
-        // Handle UP button press
-        break;
-      case RemoteButtons::eZero:  // 0
-        // Handle 0 button press
-        break;
-      case RemoteButtons::eEq:  // EQ
-        // Handle EQ button press
-        break;
-      case RemoteButtons::eStRept:  // ST/REPT
-        // Handle ST/REPT button press
-        break;
-      case RemoteButtons::eOne:  // 1
-        // Handle 1 button press
-        break;
-      case RemoteButtons::eTwo:  // 2
-        // Handle 2 button press
-        break;
-      case RemoteButtons::eThree:  // 3
-        // Handle 3 button press
-        break;
-      case RemoteButtons::eFour:  // 4
-        // Handle 4 button press
-        break;
-      case RemoteButtons::eFive:  // 5
-        // Handle 5 button press
-        break;
-      case RemoteButtons::eSix:  // 6
-        // Handle 6 button press
-        break;
-      case RemoteButtons::eSeven:  // 7
-        // Handle 7 button press
-        break;
-      case RemoteButtons::eEight:  // 8
-        // Handle 8 button press
-        break;
-      case RemoteButtons::eNine:  // 9
-        // Handle 9 button press
-        break;
+      // Add additional case handlers as needed
       default:
-        // Handle unknown or repeat command
+        DEBUG_PRINTLN("IR Command not handled.");
         break;
     }
-    IrReceiver.resume();  // Receive  the next value
+    IrReceiver.resume();
+    delay(100);  //debounce
   }
-  // Check serial for JSON packet to decide
-  read_serial(doc);
-  if (doc.isNull()) {
-    return;
-  } else if (doc.containsKey("g")) {
-    parseJsonIntoQueue(moveQueue, doc);
-    state = eMoving;
+}
+
+Move setupMoveFromIRCommand(RemoteButtons command) {
+  Move move;
+  move.moveType = MoveType::eFreeDrive;
+  switch (command) {
+    case RemoteButtons::eVolPlus:
+      move.params.freedriveParams.direction = Directions::eForwards;
+      break;
+    case RemoteButtons::eBack:
+      move.params.freedriveParams.direction = Directions::eLeft;
+      break;
+    case RemoteButtons::eFastForward:
+      move.params.freedriveParams.direction = Directions::eRight;
+      break;
+    case RemoteButtons::eDown:
+      move.params.freedriveParams.direction = Directions::eCCW;
+      break;
+    case RemoteButtons::eVolMinus:
+      move.params.freedriveParams.direction = Directions::eBackwards;
+      break;
+    case RemoteButtons::eUp:
+      move.params.freedriveParams.direction = Directions::eCW;
+      break;
+    default:
+      // Set to a default move or log an error
+      break;
   }
+  move.params.freedriveParams.duration = gRemoteControlDuration;
+  return move;
 }
 
 void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
@@ -237,6 +245,56 @@ void read_serial(JsonDocument& doc) {
     //Serial.print(F("deserializeJson() failed: "));
     //Serial.println(error.f_str());
     return;
+  }
+}
+
+void adjustmentModeAction(States& state) {
+  if (IrReceiver.decode()) {
+    switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
+      case RemoteButtons::eZero:
+        gCurrentAdjustmentSubMode = eAdjustingDriveSpeed;
+        DEBUG_PRINTLN("Selected gDriveSpeed for adjustment.");
+        break;
+      case RemoteButtons::eOne:
+        gCurrentAdjustmentSubMode = eAdjustingRemoteControlDuration;
+        DEBUG_PRINTLN("Selected gRemoteControlDuration for adjustment.");
+        break;
+      case RemoteButtons::eVolPlus:
+        switch (gCurrentAdjustmentSubMode) {
+          case eAdjustingDriveSpeed:
+            gDriveSpeed = std::min(400, gDriveSpeed + 100);
+            DEBUG_PRINT("gDriveSpeed increased to: ");
+            DEBUG_PRINTLN(gDriveSpeed);
+            break;
+          case eAdjustingRemoteControlDuration:
+            gRemoteControlDuration = std::min(10000, gRemoteControlDuration + 500);
+            DEBUG_PRINT("gRemoteControlDuration increased to: ");
+            DEBUG_PRINTLN(gRemoteControlDuration);
+            break;
+        }
+        break;
+      case RemoteButtons::eVolMinus:
+        switch (gCurrentAdjustmentSubMode) {
+          case eAdjustingDriveSpeed:
+            gDriveSpeed = std::max(0, gDriveSpeed - 100);
+            DEBUG_PRINT("gDriveSpeed decreased to: ");
+            DEBUG_PRINTLN(gDriveSpeed);
+            break;
+          case eAdjustingRemoteControlDuration:
+            gRemoteControlDuration = std::max(0, gRemoteControlDuration - 500);
+            DEBUG_PRINT("gRemoteControlDuration decreased to: ");
+            DEBUG_PRINTLN(gRemoteControlDuration);
+            break;
+        }
+        break;
+      case RemoteButtons::eFuncStop:
+        state = eStandbyIR;                         // Go back to standby IR mode
+        gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset adjustment mode
+        DEBUG_PRINTLN("Exiting adjustment mode.");
+        break;
+    }
+    IrReceiver.resume();
+    delay(100);  //debounce
   }
 }
 
@@ -418,7 +476,7 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
     // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
     float mappedSpeeds[cNumberOfWheels];
     memcpy(mappedSpeeds, targetWheelSpeeds, sizeof(mappedSpeeds));  // Copy to preserve original target speeds
-    mapWheelSpeeds(mappedSpeeds, 200);                              // hard coded value shoud be changed at some point
+    mapWheelSpeeds(mappedSpeeds, gDriveSpeed);                      // map to global drive speed
 
     // Ramp speeds up to mapped target values over a period (e.g., 200 milliseconds)
     rampMotorSpeed(mappedSpeeds, 200, true);  // true ramps up
