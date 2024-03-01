@@ -231,11 +231,11 @@ void executeLineFollow(Move nextMove) {
     gMecanumMotors.setSpeeds(leftSpeed, -rightSpeed, leftSpeed, -rightSpeed);
 
     // Check distance to wall using distance sensors
-    float distanceLeft = pollRangefinder(distPin1);
-    float distanceRight = pollRangefinder(distPin2);
+    //float distanceLeft = pollRangefinder(distPin1);
+    //float distanceRight = pollRangefinder(distPin2);
     // Check filtered distance to wall using distance sensors
-    //float distanceLeft = pollRangefinderWithSMA(distPin1, distSensor1Readings); // distSensor1Readings is a global
-    //float distanceRight = pollRangefinderWithSMA(distPin2, distSensor2Readings); // distSensor2Readings is a global
+    float distanceLeft = pollRangefinderWithSMA(distPin1, distSensor1Readings); // distSensor1Readings is a global
+    float distanceRight = pollRangefinderWithSMA(distPin2, distSensor2Readings); // distSensor2Readings is a global
 
 
     DEBUG_PRINTLN(distanceLeft);
