@@ -20,6 +20,7 @@
 #include <queue>
 #include "Wheelbase.h"
 #include "types.h"
+#include <IRremote.h>
 
 // Global variables :(
 // QUANTITIES
@@ -32,15 +33,26 @@ const int distPin1 = A4;              // Left IR rangefinder sensor
 const int distPin2 = A5;              // Right IR rangefinder sensor
 const int topLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int bottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
+const int RECV_PIN = 11;                    // IR Reciever
 
+// Sensor globals
 uint16_t sensorValues[SensorCount];
 std::queue<float> distSensor1Readings;
 std::queue<float> distSensor2Readings;
+QTRSensors qtr;
 
+// Motor globals
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
-QTRSensors qtr;
+
+// IR reciever globals
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+
+// Control flow globals :(
+std::queue<Move>* moveQueue = new std::queue<Move>();
+States state = eWaitingToStart;
 
 int main() {
   init();  // Initialize board itself
@@ -63,6 +75,9 @@ int main() {
                       36, 38, 40, 42, 43, 41, 39, 37 },
                     SensorCount);
 
+  // Start the IR Reciever
+  irrecv.enableIRIn();  // Start the receiver
+
   // ...
   setPinModes();
 
@@ -70,22 +85,12 @@ int main() {
 }
 
 void loop(JsonDocument& doc) {
-  std::queue<Move>* moveQueue = new std::queue<Move>();
-  States state = eWaitingToStart;
-
   // LOOP BEGINS
   // -------------------------------------------------
   while (true) {
     switch (state) {
       case eWaitingToStart:
-        DEBUG_PRINTLN("WAITING TO START");
-        read_serial(doc);
-        if (doc.isNull()) {
-          continue;
-        } else if (doc.containsKey("g")) {
-          parseJsonIntoQueue(moveQueue, doc);
-          state = eMoving;
-        }
+        waitingToStart(doc);
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
@@ -95,6 +100,24 @@ void loop(JsonDocument& doc) {
     }
   }
   // -------------------------------------------------
+}
+
+void waitingToStart(JsonDocument& doc) {
+  DEBUG_PRINTLN("WAITING TO START");
+  // Check serial for JSON packet to decide
+  read_serial(doc);
+  if (doc.isNull()) {
+    return;
+  } else if (doc.containsKey("g")) {
+    parseJsonIntoQueue(moveQueue, doc);
+    state = eMoving;
+  }
+  // Check IR Reciever for IR signal to decode
+  if (irrecv.decode(&results)) {
+
+    Serial2.println(results.value, HEX);
+    irrecv.resume();  // Receive  the next value
+  }
 }
 
 void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
@@ -216,12 +239,12 @@ void executeFreeDrive(Move nextMove) {
 void executeLineFollow(Move nextMove) {
   float targetDistance = nextMove.params.linefollowParams.stopDistance;
   int baseSpeed = nextMove.params.linefollowParams.speed;
-  int lastError = 0; // Variable to store the last error for the derivative term
-  double Kp = (1.0 / 20.0) * (baseSpeed / 200.0); // Proportional gain
+  int lastError = 0;                               // Variable to store the last error for the derivative term
+  double Kp = (1.0 / 20.0) * (baseSpeed / 200.0);  // Proportional gain
   double Kd = 0.01;
 
-  unsigned long lastMotorUpdateTime = 0; // Stores the last time the motors were updated
-  const unsigned long motorUpdateInterval = 100; // Update motors every 100 milliseconds
+  unsigned long lastMotorUpdateTime = 0;          // Stores the last time the motors were updated
+  const unsigned long motorUpdateInterval = 100;  // Update motors every 100 milliseconds
 
   while (true) {
     // Poll the rangefinders continuously
@@ -230,8 +253,8 @@ void executeLineFollow(Move nextMove) {
 
     // If close enough to the wall, stop
     if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
-      gMecanumMotors.setSpeeds(0, 0, 0, 0); // Stop the robot
-      break; // Exit the loop
+      gMecanumMotors.setSpeeds(0, 0, 0, 0);  // Stop the robot
+      break;                                 // Exit the loop
     }
 
     unsigned long currentMillis = millis();
@@ -240,8 +263,8 @@ void executeLineFollow(Move nextMove) {
     if (currentMillis - lastMotorUpdateTime >= motorUpdateInterval) {
       // Perform line following logic
       uint16_t position = qtr.readLineBlack(sensorValues);
-      int error = position - 3500; // Center is 3500 for 8 sensors
-      int derivative = error - lastError; // Calculate derivative. This is over 100ms because thats the motor update interval.
+      int error = position - 3500;         // Center is 3500 for 8 sensors
+      int derivative = error - lastError;  // Calculate derivative. This is over 100ms because thats the motor update interval.
 
       int leftSpeed = baseSpeed + (Kp * error) + (Kd * derivative);
       int rightSpeed = baseSpeed - (Kp * error) - (Kd * derivative);
@@ -249,8 +272,8 @@ void executeLineFollow(Move nextMove) {
       // Set motor speeds based on line position
       gMecanumMotors.setSpeeds(leftSpeed, -rightSpeed, leftSpeed, -rightSpeed);
 
-      lastError = error; // Update lastError for the next iteration
-      lastMotorUpdateTime = currentMillis; // Update the time of last motor update
+      lastError = error;                    // Update lastError for the next iteration
+      lastMotorUpdateTime = currentMillis;  // Update the time of last motor update
     }
 
     // The loop now continues without delay, allowing for continuous sensor polling
@@ -325,7 +348,7 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
     mapWheelSpeeds(mappedSpeeds, 200);                              // hard coded value shoud be changed at some point
 
     // Ramp speeds up to mapped target values over a period (e.g., 200 milliseconds)
-    rampMotorSpeed(mappedSpeeds, 200, true); // true ramps up
+    rampMotorSpeed(mappedSpeeds, 200, true);  // true ramps up
 
     // Wait for the specified delay time after ramping to the target speed.
     delay(delayTime);
@@ -373,8 +396,7 @@ void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration, bool rampDirecti
       if (rampDirection == true) {
         memcpy(currentSpeed, targetWheelSpeeds, sizeof(currentSpeed));
         gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
-      }
-      else {
+      } else {
         gMecanumMotors.setSpeeds(0, 0, 0, 0);
       }
       break;  // Exit loop
@@ -382,13 +404,11 @@ void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration, bool rampDirecti
       // Calculate and set intermediate speeds
       for (int i = 0; i < cNumberOfWheels; i++) {
         if (rampDirection == true) {
-        //ramp up
+          //ramp up
           currentSpeed[i] = targetWheelSpeeds[i] * rampProgress;
-        }
-        else 
-        {
+        } else {
           // ramp down
-          currentSpeed[i] = targetWheelSpeeds[i] * (1-rampProgress);
+          currentSpeed[i] = targetWheelSpeeds[i] * (1 - rampProgress);
         }
       }
       gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
