@@ -32,6 +32,8 @@ const uint8_t cSensorCount = 8;
 const int cFilterWindowSize = 20;
 int gDriveSpeed = 200;
 int gRemoteControlDuration = 1000;
+unsigned long gLastRCCommandTime = 0;
+const unsigned long cRCCommandTimeout = 200; // Timeout duration in milliseconds (e.g., 5000ms = 5 seconds)
 AdjustmentSubModes gCurrentAdjustmentSubMode = eNotAdjusting;
 // PINS
 const int cDistPin1 = A4;              // Left IR rangefinder sensor
@@ -125,7 +127,7 @@ void standbyJSON(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) 
     }
     IrReceiver.resume();
     delay(100);  //debounce
-    return;     // Early return to avoid JSON processing if power button was pressed
+    return;      // Early return to avoid JSON processing if power button was pressed
   }
 
   // Continue with JSON processing only if the power button was not pressed
@@ -146,7 +148,7 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
     switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
       case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
         state = eStandbyRC;
-        DEBUG_PRINTLN("Cycle state: Switching to JSON mode");
+        DEBUG_PRINTLN("Cycle state: Switching to RC mode");
         break;
       case RemoteButtons::eVolPlus:      // Drive forwards
       case RemoteButtons::eBack:         // Drive left
@@ -178,15 +180,57 @@ void standbyRC(States& state) {
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
 
-  // Check IR Receiver specifically for the power button press to toggle state
   if (IrReceiver.decode()) {
-    if ((RemoteButtons)IrReceiver.decodedIRData.command == RemoteButtons::ePwr) {
-      state = eStandbyJSON;
-      DEBUG_PRINTLN("Toggle state: Switching to JSON mode");
+
+    gLastRCCommandTime = millis();
+    float wheelSpeeds[cNumberOfWheels];
+
+    switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
+      case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
+        state = eStandbyJSON;
+        DEBUG_PRINTLN("Cycle state: Switching to JSON mode");
+        break;
+      case RemoteButtons::eVolPlus:  // Drive forwards
+        gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
+        runMotorsDirectly(wheelSpeeds);
+        break;
+
+      case RemoteButtons::eBack:  // Drive left
+        gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
+        runMotorsDirectly(wheelSpeeds);
+        break;
+
+      case RemoteButtons::eFastForward:  // Drive right
+        gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
+        runMotorsDirectly(wheelSpeeds);
+        break;
+
+      case RemoteButtons::eDown:  // Rotate counterclockwise
+        gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
+        runMotorsDirectly(wheelSpeeds);
+        break;
+
+      case RemoteButtons::eVolMinus:  // Drive backwards
+        gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
+        runMotorsDirectly(wheelSpeeds);
+        break;
+
+      case RemoteButtons::eUp:  // Rotate clockwise
+        gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
+        runMotorsDirectly(wheelSpeeds);
+        break;
+      // Add additional case handlers as needed
+      default:
+        DEBUG_PRINTLN("IR Command not handled.");
+        break;
     }
     IrReceiver.resume();
-    delay(100);  //debounce
-    return;     // Early return to avoid JSON processing if power button was pressed
+  } else {
+    if (millis() - gLastRCCommandTime > cRCCommandTimeout) {
+      gMecanumMotors.setSpeeds(0, 0, 0, 0); // Set speeds to 0 after timeout
+      // reset lastCommandTime here to prevent repeatedly setting speeds to 0
+      gLastRCCommandTime = millis(); 
+    }
   }
 }
 
@@ -508,6 +552,19 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
     rampMotorSpeed(mappedSpeeds, 200, false);  // false ramps down
 
     DEBUG_PRINTLN("Motors stopped.");
+  } else {
+    DEBUG_PRINTLN("Error: targetWheelSpeeds is null.");
+  }
+}
+
+void runMotorsDirectly(float* targetWheelSpeeds) {
+  if (targetWheelSpeeds) {
+
+    // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
+    float mappedSpeeds[cNumberOfWheels];
+    mapWheelSpeeds(targetWheelSpeeds, gDriveSpeed);                      // map to global drive speed
+    gMecanumMotors.setSpeeds(targetWheelSpeeds[0], -targetWheelSpeeds[1], targetWheelSpeeds[2], -targetWheelSpeeds[3]);
+
   } else {
     DEBUG_PRINTLN("Error: targetWheelSpeeds is null.");
   }
