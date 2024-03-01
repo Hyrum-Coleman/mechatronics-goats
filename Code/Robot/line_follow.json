@@ -6,7 +6,7 @@
     },
     {
       "type": 2,
-      "stopDistance": 5,
+      "stopDistance": 10,
       "speed": 200
     }
   ]

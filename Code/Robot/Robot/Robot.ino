@@ -26,7 +26,7 @@
 const int cNumberOfWheels = 4;
 const uint8_t SensorCount = 8;
 // PARAMETERS
-const int MA_WINDOW_SIZE = 5;
+const int MA_WINDOW_SIZE = 20;
 // PINS
 const int distPin1 = A4;              // Left IR rangefinder sensor
 const int distPin2 = A5;              // Right IR rangefinder sensor
@@ -213,43 +213,51 @@ void executeFreeDrive(Move nextMove) {
   }
 }
 
-// todo: get this working. currently stopping because distance threshold so the distance sensors are getting noisy values
 void executeLineFollow(Move nextMove) {
   float targetDistance = nextMove.params.linefollowParams.stopDistance;
   int baseSpeed = nextMove.params.linefollowParams.speed;
+  int lastError = 0; // Variable to store the last error for the derivative term
+  double Kp = (1.0 / 20.0) * (baseSpeed / 200.0); // Proportional gain
+  double Kd = 0.01;
+
+  unsigned long lastMotorUpdateTime = 0; // Stores the last time the motors were updated
+  const unsigned long motorUpdateInterval = 100; // Update motors every 100 milliseconds
 
   while (true) {
-    // Perform line following logic
-    uint16_t position = qtr.readLineBlack(sensorValues);
-    int error = position - 3500;  // Center is 3500 for 8 sensors
-    double Kp = 1.0 / 20.0;
-
-    int leftSpeed = baseSpeed + (Kp * error);
-    int rightSpeed = baseSpeed - (Kp * error);
-
-    // Set motor speeds based on line position
-    gMecanumMotors.setSpeeds(leftSpeed, -rightSpeed, leftSpeed, -rightSpeed);
-
-    // Check distance to wall using distance sensors
-    //float distanceLeft = pollRangefinder(distPin1);
-    //float distanceRight = pollRangefinder(distPin2);
-    // Check filtered distance to wall using distance sensors
-    float distanceLeft = pollRangefinderWithSMA(distPin1, distSensor1Readings); // distSensor1Readings is a global
-    float distanceRight = pollRangefinderWithSMA(distPin2, distSensor2Readings); // distSensor2Readings is a global
-
-
-    DEBUG_PRINTLN(distanceLeft);
-    DEBUG_PRINTLN(distanceRight);
+    // Poll the rangefinders continuously
+    float distanceLeft = pollRangefinderWithSMA(distPin1, distSensor1Readings);
+    float distanceRight = pollRangefinderWithSMA(distPin2, distSensor2Readings);
 
     // If close enough to the wall, stop
     if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
-      gMecanumMotors.setSpeeds(0, 0, 0, 0);  // Stop the robot
-      break;                                 // Exit the loop
+      gMecanumMotors.setSpeeds(0, 0, 0, 0); // Stop the robot
+      break; // Exit the loop
     }
 
-    delay(100);  // Short delay to avoid overly frequent sensor readings and motor updates
+    unsigned long currentMillis = millis();
+
+    // Non-blocking delay logic for motor speed adjustments
+    if (currentMillis - lastMotorUpdateTime >= motorUpdateInterval) {
+      // Perform line following logic
+      uint16_t position = qtr.readLineBlack(sensorValues);
+      int error = position - 3500; // Center is 3500 for 8 sensors
+      int derivative = error - lastError; // Calculate derivative. This is over 100ms because thats the motor update interval.
+
+      int leftSpeed = baseSpeed + (Kp * error) + (Kd * derivative);
+      int rightSpeed = baseSpeed - (Kp * error) - (Kd * derivative);
+
+      // Set motor speeds based on line position
+      gMecanumMotors.setSpeeds(leftSpeed, -rightSpeed, leftSpeed, -rightSpeed);
+
+      lastError = error; // Update lastError for the next iteration
+      lastMotorUpdateTime = currentMillis; // Update the time of last motor update
+    }
+
+    // The loop now continues without delay, allowing for continuous sensor polling
   }
 }
+
+
 
 // NOTE: THE DIRECTION OF THE MOTOR TO GO UP VS DOWN MAY NEED TO BE CHANGED!!!
 // If switches dont get triggered, this times out to avoid getting stuck in a loop
