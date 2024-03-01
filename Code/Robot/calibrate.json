@@ -1,7 +1,7 @@
 {
   "g": [
     {
-      "type": "calibrate",
+      "type": 5,
       "duration": 6000
     }
   ]

@@ -1,11 +1,11 @@
 {
   "g": [
     {
-      "type": "calibrate",
+      "type": 5,
       "duration": 6000
     },
     {
-      "type": "linefollow",
+      "type": 2,
       "stopDistance": 5,
       "speed": 200
     }

@@ -103,6 +103,7 @@ void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
 
     // Populate move structs params based on move type
     MoveType moveType = obj["type"].as<MoveType>();
+
     currentMove.moveType = moveType;
     switch (currentMove.moveType) {
       case MoveType::eFreeDrive:
@@ -118,7 +119,7 @@ void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
         break;
       case MoveType::eBelt:
         currentMove.params.beltParams.direction = obj["direction"];
-        currentMove.params.beltParams.duration = obj["duraction"];
+        currentMove.params.beltParams.duration = obj["duration"];
         break;
       case MoveType::eCalibrate:
         currentMove.params.calibrationParams.duration = obj["duration"];

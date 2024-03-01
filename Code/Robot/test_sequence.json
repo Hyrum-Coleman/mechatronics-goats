@@ -1,50 +1,50 @@
 {
   "g": [
     {
-      "type": "freedrive",
+      "type": 1,
       "direction": 1,
       "duration": 1000
     },
     {
-      "type": "freedrive",
+      "type": 1,
       "direction": 2,
       "duration": 1000
     },
     {
-      "type": "freedrive",
+      "type": 1,
       "direction": 3,
       "duration": 1000
     },
     {
-      "type": "freedrive",
+      "type": 1,
       "direction": 4,
       "duration": 1000
     },
     {
-      "type": "freedrive",
+      "type": 1,
       "direction": 5,
       "duration": 1000
     },
     {
-      "type": "freedrive",
+      "type": 1,
       "direction": 6,
       "duration": 1000
     },
     {
-      "type": "scissor",
+      "type": 3,
       "direction": 1
     },
     {
-      "type": "scissor",
+      "type": 3,
       "direction": 0
     },
     {
-      "type": "belt",
+      "type": 4,
       "direction": 1,
       "duration": 1000
     },
     {
-      "type": "belt",
+      "type": 4,
       "direction": 0,
       "duration": 1000
     }

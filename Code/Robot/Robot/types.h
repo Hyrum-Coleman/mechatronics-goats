@@ -8,11 +8,11 @@ enum Directions {
 };
 
 enum MoveType {
-  eFreeDrive,
-  eLineFollow,
-  eScissor,
-  eBelt,
-  eCalibrate,
+  eFreeDrive = 1,
+  eLineFollow = 2,
+  eScissor = 3,
+  eBelt = 4,
+  eCalibrate = 5,
 };
 
 // Onion for move-specific parameters
