@@ -20,7 +20,9 @@
 #include <queue>
 #include "Wheelbase.h"
 #include "types.h"
-#include <IRremote.h>
+// these are both for IR reciever library
+//#include "PinDefinitionsAndMore.h"
+#include <IRremote.hpp> // include the library
 
 // Global variables :(
 // QUANTITIES
@@ -33,7 +35,7 @@ const int cDistPin1 = A4;              // Left IR rangefinder sensor
 const int cDistPin2 = A5;              // Right IR rangefinder sensor
 const int cTopLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int cBottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
-const int cIrRecvPin = 11;             // IR Reciever
+const int cIrRecievePin = 11;             // IR Reciever
 
 // Sensor globals
 uint16_t sensorValues[cSensorCount];
@@ -45,10 +47,6 @@ QTRSensors gQtr;
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
-
-// IR reciever globals
-IRrecv gIrReciever(cIrRecvPin);
-decode_results gIrDecodeResults;
 
 int main() {
   init();  // Initialize board itself
@@ -72,7 +70,7 @@ int main() {
                      cSensorCount);
 
   // Start the IR Reciever
-  gIrReciever.enableIRIn();  // Start the receiver
+  IrReceiver.begin(cIrRecievePin, true); // true for enable IR feedback
 
   // ...
   setPinModes();
@@ -106,19 +104,11 @@ void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& stat
   DEBUG_PRINT("STANDBY... <");
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
-  // Check serial for JSON packet to decide
-  read_serial(doc);
-  if (doc.isNull()) {
-    return;
-  } else if (doc.containsKey("g")) {
-    parseJsonIntoQueue(moveQueue, doc);
-    state = eMoving;
-  }
   // Check IR Reciever for IR signal to decode
-  if (gIrReciever.decode(&gIrDecodeResults)) {
+  if (IrReceiver.decode()) {
     // note: FFFFFF is a repeat command. You get it while you hold a button down.
-    Serial2.println(gIrDecodeResults.value, HEX);
-    switch ((RemoteButtons)gIrDecodeResults.value) {
+    Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
+    switch ((RemoteButtons)IrReceiver.decodedIRData.decodedRawData) {
       case RemoteButtons::ePwr:  // PWR
         // Handle PWR button press
         break;
@@ -186,7 +176,15 @@ void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& stat
         // Handle unknown or repeat command
         break;
     }
-    gIrReciever.resume();  // Receive  the next value
+    IrReceiver.resume();  // Receive  the next value
+  }
+  // Check serial for JSON packet to decide
+  read_serial(doc);
+  if (doc.isNull()) {
+    return;
+  } else if (doc.containsKey("g")) {
+    parseJsonIntoQueue(moveQueue, doc);
+    state = eMoving;
   }
 }
 
