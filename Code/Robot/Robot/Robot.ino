@@ -33,7 +33,7 @@ const int cFilterWindowSize = 20;
 int gDriveSpeed = 200;
 int gRemoteControlDuration = 1000;
 unsigned long gLastRCCommandTime = 0;
-const unsigned long cRCCommandTimeout = 200; // Timeout duration in milliseconds (e.g., 5000ms = 5 seconds)
+const unsigned long cRCCommandTimeout = 110;
 AdjustmentSubModes gCurrentAdjustmentSubMode = eNotAdjusting;
 // PINS
 const int cDistPin1 = A4;              // Left IR rangefinder sensor
@@ -103,7 +103,7 @@ void loop(JsonDocument& doc) {
         state = eStandbyIR;  // Return to the default IR standby mode after executing moves
         break;
       case eAdjustmentMode:
-        adjustmentModeAction(state);
+        executeAdjustmentMode(state);
         break;
       case eStandbyRC:
         standbyRC(state);
@@ -156,9 +156,16 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
       case RemoteButtons::eDown:         // Rotate counterclockwise
       case RemoteButtons::eVolMinus:     // Drive backwards
       case RemoteButtons::eUp:           // Rotate clockwise
+      case RemoteButtons::eTwo:          // move platform up
+      case RemoteButtons::eEight:        // move platform down
+      case RemoteButtons::eFour:         // move belt backwards
+      case RemoteButtons::eSix:          // move belt forwards
+      case RemoteButtons::eZero:          // move belt forwards
+      case RemoteButtons::eOne:          // move belt forwards
         // For each of these cases, setup the move according to the button press
         move = setupMoveFromIRCommand((RemoteButtons)IrReceiver.decodedIRData.command);
-        executeFreeDrive(move);
+        moveQueue->push(move);
+        executeMoveSequence(moveQueue);
         break;
       case RemoteButtons::eFuncStop:  // Enter adjustment mode
         state = eAdjustmentMode;
@@ -192,32 +199,44 @@ void standbyRC(States& state) {
         break;
       case RemoteButtons::eVolPlus:  // Drive forwards
         gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
-        runMotorsDirectly(wheelSpeeds);
+        runWheelMotorsDirectly(wheelSpeeds);
         break;
 
       case RemoteButtons::eBack:  // Drive left
         gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
-        runMotorsDirectly(wheelSpeeds);
+        runWheelMotorsDirectly(wheelSpeeds);
         break;
 
       case RemoteButtons::eFastForward:  // Drive right
         gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
-        runMotorsDirectly(wheelSpeeds);
+        runWheelMotorsDirectly(wheelSpeeds);
         break;
 
       case RemoteButtons::eDown:  // Rotate counterclockwise
         gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
-        runMotorsDirectly(wheelSpeeds);
+        runWheelMotorsDirectly(wheelSpeeds);
         break;
 
       case RemoteButtons::eVolMinus:  // Drive backwards
         gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
-        runMotorsDirectly(wheelSpeeds);
+        runWheelMotorsDirectly(wheelSpeeds);
         break;
 
       case RemoteButtons::eUp:  // Rotate clockwise
         gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
-        runMotorsDirectly(wheelSpeeds);
+        runWheelMotorsDirectly(wheelSpeeds);
+        break;
+      case RemoteButtons::eSix:
+        gL2Motors.setSpeeds(-400, 0);
+        break;
+      case RemoteButtons::eFour:
+          gL2Motors.setSpeeds(400, 0);
+        break;
+      case RemoteButtons::eTwo:
+          gL2Motors.setSpeeds(0, 200);
+        break;
+      case RemoteButtons::eEight:
+          gL2Motors.setSpeeds(0, -200);
         break;
       // Add additional case handlers as needed
       default:
@@ -227,40 +246,78 @@ void standbyRC(States& state) {
     IrReceiver.resume();
   } else {
     if (millis() - gLastRCCommandTime > cRCCommandTimeout) {
-      gMecanumMotors.setSpeeds(0, 0, 0, 0); // Set speeds to 0 after timeout
+      gMecanumMotors.setSpeeds(0, 0, 0, 0);  // Set speeds to 0 after timeout
+      gL2Motors.setSpeeds(0, 0);
       // reset lastCommandTime here to prevent repeatedly setting speeds to 0
-      gLastRCCommandTime = millis(); 
+      gLastRCCommandTime = millis();
     }
   }
 }
 
 Move setupMoveFromIRCommand(RemoteButtons command) {
   Move move;
-  move.moveType = MoveType::eFreeDrive;
   switch (command) {
     case RemoteButtons::eVolPlus:
+      move.moveType = MoveType::eFreeDrive;
       move.params.freedriveParams.direction = Directions::eForwards;
+      move.params.freedriveParams.duration = gRemoteControlDuration;
       break;
     case RemoteButtons::eBack:
+      move.moveType = MoveType::eFreeDrive;
       move.params.freedriveParams.direction = Directions::eLeft;
+      move.params.freedriveParams.duration = gRemoteControlDuration;
       break;
     case RemoteButtons::eFastForward:
+      move.moveType = MoveType::eFreeDrive;
       move.params.freedriveParams.direction = Directions::eRight;
+      move.params.freedriveParams.duration = gRemoteControlDuration;
       break;
     case RemoteButtons::eDown:
+      move.moveType = MoveType::eFreeDrive;
       move.params.freedriveParams.direction = Directions::eCCW;
+      move.params.freedriveParams.duration = gRemoteControlDuration;
       break;
     case RemoteButtons::eVolMinus:
+      move.moveType = MoveType::eFreeDrive;
       move.params.freedriveParams.direction = Directions::eBackwards;
+      move.params.freedriveParams.duration = gRemoteControlDuration;
       break;
     case RemoteButtons::eUp:
+      move.moveType = MoveType::eFreeDrive;
       move.params.freedriveParams.direction = Directions::eCW;
+      move.params.freedriveParams.duration = gRemoteControlDuration;
       break;
+    //Uncomment this when limit switches are working
+    case RemoteButtons::eTwo:  // move platform up
+      move.moveType = MoveType::eScissor;
+      move.params.scissorParams.direction = 1;
+      break;
+    case RemoteButtons::eEight:  // move platform down
+      move.moveType = MoveType::eScissor;
+      move.params.scissorParams.direction = 0;
+      break;
+    case RemoteButtons::eFour:  // move belt backwards
+      move.moveType = MoveType::eBelt;
+      move.params.beltParams.direction = 1;
+      move.params.beltParams.duration = gRemoteControlDuration;
+      break;
+    case RemoteButtons::eSix:  // move belt forwards
+      move.moveType = MoveType::eBelt;
+      move.params.beltParams.direction = 0;
+      move.params.beltParams.duration = gRemoteControlDuration;
+      break;
+    case RemoteButtons::eZero:  // move belt forwards
+      move.moveType = MoveType::eCalibrate;
+      move.params.calibrationParams.duration = 3000; // make this changable in the configuration mode
+      break;
+    case RemoteButtons::eOne:
+      move.moveType = MoveType::eLineFollow;
+      move.params.linefollowParams.speed = gDriveSpeed;
+      move.params.linefollowParams.stopDistance = 10; // make this changable in the configuration mode
     default:
       // Set to a default move or log an error
       break;
   }
-  move.params.freedriveParams.duration = gRemoteControlDuration;
   return move;
 }
 
@@ -312,7 +369,7 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-void adjustmentModeAction(States& state) {
+void executeAdjustmentMode(States& state) {
   if (IrReceiver.decode()) {
     switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
       case RemoteButtons::eZero:
@@ -403,27 +460,27 @@ void executeFreeDrive(Move nextMove) {
   switch (nextMove.params.freedriveParams.direction) {
     case eForwards:
       gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eLeft:
       gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eBackwards:
       gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eRight:
       gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eCCW:
       gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eCW:
       gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
-      runMotorsWithBlockingDelay(delayTime, wheelSpeeds);
+      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     default:
       DEBUG_PRINTLN("Unexpected input in direction switch for freedrive.");
@@ -533,7 +590,7 @@ void executeBelt(Move nextMove) {
   DEBUG_PRINTLN("Done moving belt.");
 }
 
-void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
+void runWheelMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
   if (targetWheelSpeeds) {
     DEBUG_PRINTLN("Running wheel motors with blocking delay and speed ramp.");
 
@@ -557,12 +614,12 @@ void runMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
   }
 }
 
-void runMotorsDirectly(float* targetWheelSpeeds) {
+void runWheelMotorsDirectly(float* targetWheelSpeeds) {
   if (targetWheelSpeeds) {
 
     // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
     float mappedSpeeds[cNumberOfWheels];
-    mapWheelSpeeds(targetWheelSpeeds, gDriveSpeed);                      // map to global drive speed
+    mapWheelSpeeds(targetWheelSpeeds, gDriveSpeed);  // map to global drive speed
     gMecanumMotors.setSpeeds(targetWheelSpeeds[0], -targetWheelSpeeds[1], targetWheelSpeeds[2], -targetWheelSpeeds[3]);
 
   } else {
