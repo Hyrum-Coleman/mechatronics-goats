@@ -33,7 +33,7 @@ const int cDistPin1 = A4;              // Left IR rangefinder sensor
 const int cDistPin2 = A5;              // Right IR rangefinder sensor
 const int cTopLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int cBottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
-const int cIrRecvPin = 11;              // IR Reciever
+const int cIrRecvPin = 11;             // IR Reciever
 
 // Sensor globals
 uint16_t sensorValues[cSensorCount];
@@ -68,8 +68,8 @@ int main() {
   // initialize IR array
   gQtr.setTypeRC();
   gQtr.setSensorPins((const uint8_t[]){
-                      36, 38, 40, 42, 43, 41, 39, 37 },
-                    cSensorCount);
+                       36, 38, 40, 42, 43, 41, 39, 37 },
+                     cSensorCount);
 
   // Start the IR Reciever
   gIrReciever.enableIRIn();  // Start the receiver
@@ -104,7 +104,7 @@ void loop(JsonDocument& doc) {
 
 void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
   DEBUG_PRINT("STANDBY... <");
-  DEBUG_PRINT(millis()/1000.0);
+  DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
   // Check serial for JSON packet to decide
   read_serial(doc);
@@ -118,68 +118,68 @@ void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& stat
   if (gIrReciever.decode(&gIrDecodeResults)) {
     // note: FFFFFF is a repeat command. You get it while you hold a button down.
     Serial2.println(gIrDecodeResults.value, HEX);
-    switch (gIrDecodeResults.value) {
-      case 0xFD00FF:  // PWR
+    switch ((RemoteButtons)gIrDecodeResults.value) {
+      case RemoteButtons::ePwr:  // PWR
         // Handle PWR button press
         break;
-      case 0xFD807F:  // VOL+
+      case RemoteButtons::eVolPlus:  // VOL+
         // Handle VOL+ button press
         break;
-      case 0xFD40BF:  // FUNC/STOP
+      case RemoteButtons::eFuncStop:  // FUNC/STOP
         // Handle FUNC/STOP button press
         break;
-      case 0xFD20DF:  // |<<
+      case RemoteButtons::eBack:  // |<<
         // Handle |<< button press
         break;
-      case 0xFDA05F:  // >|
+      case RemoteButtons::eForward:  // >|
         // Handle >| button press
         break;
-      case 0xFD609F:  // >>|
+      case RemoteButtons::eFastForward:  // >>|
         // Handle >>| button press
         break;
-      case 0xFD10EF:  // DOWN
+      case RemoteButtons::eDown:  // DOWN
         // Handle DOWN button press
         break;
-      case 0xFD906F:  // VOL-
+      case RemoteButtons::eVolMinus:  // VOL-
         // Handle VOL- button press
         break;
-      case 0xFD50AF:  // UP
+      case RemoteButtons::eUp:  // UP
         // Handle UP button press
         break;
-      case 0xFD30CF:  // 0
+      case RemoteButtons::eZero:  // 0
         // Handle 0 button press
         break;
-      case 0xFDB04F:  // EQ
+      case RemoteButtons::eEq:  // EQ
         // Handle EQ button press
         break;
-      case 0xFD708F:  // ST/REPT
+      case RemoteButtons::eStRept:  // ST/REPT
         // Handle ST/REPT button press
         break;
-      case 0xFD08F7:  // 1
+      case RemoteButtons::eOne:  // 1
         // Handle 1 button press
         break;
-      case 0xFD8877:  // 2
+      case RemoteButtons::eTwo:  // 2
         // Handle 2 button press
         break;
-      case 0xFD48B7:  // 3
+      case RemoteButtons::eThree:  // 3
         // Handle 3 button press
         break;
-      case 0xFD28D7:  // 4
+      case RemoteButtons::eFour:  // 4
         // Handle 4 button press
         break;
-      case 0xFDA857:  // 5
+      case RemoteButtons::eFive:  // 5
         // Handle 5 button press
         break;
-      case 0xFD6897:  // 6
+      case RemoteButtons::eSix:  // 6
         // Handle 6 button press
         break;
-      case 0xFD18E7:  // 7
+      case RemoteButtons::eSeven:  // 7
         // Handle 7 button press
         break;
-      case 0xFD9867:  // 8
+      case RemoteButtons::eEight:  // 8
         // Handle 8 button press
         break;
-      case 0xFD58A7:  // 9
+      case RemoteButtons::eNine:  // 9
         // Handle 9 button press
         break;
       default:
