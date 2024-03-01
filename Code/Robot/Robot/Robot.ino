@@ -107,13 +107,13 @@ void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& stat
   // Check IR Reciever for IR signal to decode
   if (IrReceiver.decode()) {
     // note: FFFFFF is a repeat command. You get it while you hold a button down.
-    Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
-    switch ((RemoteButtons)IrReceiver.decodedIRData.decodedRawData) {
+    Serial.println(IrReceiver.decodedIRData.command);
+    switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
       case RemoteButtons::ePwr:  // PWR
-        // Handle PWR button press
+        Serial.println("POWER");
         break;
       case RemoteButtons::eVolPlus:  // VOL+
-        // Handle VOL+ button press
+        Serial.println("VOLPLUS");
         break;
       case RemoteButtons::eFuncStop:  // FUNC/STOP
         // Handle FUNC/STOP button press

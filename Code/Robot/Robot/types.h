@@ -16,29 +16,28 @@ enum MoveType {
 };
 
 enum RemoteButtons {
-    ePwr = 0xFD00FF,
-    eVolPlus = 0xFD807F,
-    eFuncStop = 0xFD40BF,
-    eBack = 0xFD20DF,       // |<<
-    eForward = 0xFDA05F,    // >|
-    eFastForward = 0xFD609F,// >>|
-    eDown = 0xFD10EF,
-    eVolMinus = 0xFD906F,
-    eUp = 0xFD50AF,
-    eZero = 0xFD30CF,       // 0
-    eEq = 0xFDB04F,
-    eStRept = 0xFD708F,
-    eOne = 0xFD08F7,
-    eTwo = 0xFD8877,
-    eThree = 0xFD48B7,
-    eFour = 0xFD28D7,
-    eFive = 0xFDA857,
-    eSix = 0xFD6897,
-    eSeven = 0xFD18E7,
-    eEight = 0xFD9867,
-    eNine = 0xFD58A7,
-    eRepeat = 0xFFFFFF
-};
+    ePwr = 69,
+    eVolPlus = 70,
+    eFuncStop = 71,
+    eBack = 68,       // |<<
+    eForward = 64,    // >|
+    eFastForward = 67,// >>|
+    eDown = 7,
+    eVolMinus = 21,
+    eUp = 9,
+    eZero = 22,       // 0
+    eEq = 25,
+    eStRept = 13,
+    eOne = 12,
+    eTwo = 24,
+    eThree = 94,
+    eFour = 8,
+    eFive = 28,
+    eSix = 90,
+    eSeven = 66,
+    eEight = 82,
+    eNine = 74
+  };
 
 
 
