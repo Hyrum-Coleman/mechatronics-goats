@@ -103,6 +103,9 @@ void loop(JsonDocument& doc) {
       case eAdjustmentMode:
         adjustmentModeAction(state);
         break;
+      case eStandbyRC:
+        standbyRC(state);
+        break;
         // Other cases as needed
     }
   }
@@ -117,8 +120,8 @@ void standbyJSON(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) 
   // Check IR Receiver specifically for the power button press to toggle state
   if (IrReceiver.decode()) {
     if ((RemoteButtons)IrReceiver.decodedIRData.command == RemoteButtons::ePwr) {
-      state = (state == eStandbyJSON) ? eStandbyIR : eStandbyJSON;
-      DEBUG_PRINTLN("Toggle state: Switching to IR mode");
+      state = eStandbyIR;
+      DEBUG_PRINTLN("Cycle state: Switching to IR mode");
     }
     IrReceiver.resume();
     delay(100);  //debounce
@@ -142,8 +145,8 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
     Move move;
     switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
       case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
-        state = (state == eStandbyIR) ? eStandbyJSON : eStandbyIR;
-        DEBUG_PRINTLN("Toggle state: Switching modes");
+        state = eStandbyRC;
+        DEBUG_PRINTLN("Cycle state: Switching to JSON mode");
         break;
       case RemoteButtons::eVolPlus:      // Drive forwards
       case RemoteButtons::eBack:         // Drive left
@@ -167,6 +170,23 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
     }
     IrReceiver.resume();
     delay(100);  //debounce
+  }
+}
+
+void standbyRC(States& state) {
+  DEBUG_PRINT("STANDBY RC... <");
+  DEBUG_PRINT(millis() / 1000.0);
+  DEBUG_PRINTLN(">");
+
+  // Check IR Receiver specifically for the power button press to toggle state
+  if (IrReceiver.decode()) {
+    if ((RemoteButtons)IrReceiver.decodedIRData.command == RemoteButtons::ePwr) {
+      state = eStandbyJSON;
+      DEBUG_PRINTLN("Toggle state: Switching to JSON mode");
+    }
+    IrReceiver.resume();
+    delay(100);  //debounce
+    return;     // Early return to avoid JSON processing if power button was pressed
   }
 }
 

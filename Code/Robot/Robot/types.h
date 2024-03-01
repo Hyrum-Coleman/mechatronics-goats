@@ -76,7 +76,8 @@ enum States {
   eMoving = 0,
   eStandbyJSON = 1,
   eStandbyIR = 2,
-  eAdjustmentMode = 3
+  eStandbyRC = 3,
+  eAdjustmentMode = 4
 };
 
 enum AdjustmentSubModes {
