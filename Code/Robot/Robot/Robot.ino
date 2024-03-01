@@ -33,7 +33,7 @@ const int distPin1 = A4;              // Left IR rangefinder sensor
 const int distPin2 = A5;              // Right IR rangefinder sensor
 const int topLimitSwitchPin = 53;     // Replace XX with the actual pin number
 const int bottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
-const int RECV_PIN = 11;                    // IR Reciever
+const int RECV_PIN = 11;              // IR Reciever
 
 // Sensor globals
 uint16_t sensorValues[SensorCount];
@@ -114,8 +114,76 @@ void waitingToStart(JsonDocument& doc) {
   }
   // Check IR Reciever for IR signal to decode
   if (irrecv.decode(&results)) {
-
+    // note: FFFFFF is a repeat command. You get it while you hold a button down.
     Serial2.println(results.value, HEX);
+    switch (results.value) {
+      case 0xFD00FF:  // PWR
+        // Handle PWR button press
+        break;
+      case 0xFD807F:  // VOL+
+        // Handle VOL+ button press
+        break;
+      case 0xFD40BF:  // FUNC/STOP
+        // Handle FUNC/STOP button press
+        break;
+      case 0xFD20DF:  // |<<
+        // Handle |<< button press
+        break;
+      case 0xFDA05F:  // >|
+        // Handle >| button press
+        break;
+      case 0xFD609F:  // >>|
+        // Handle >>| button press
+        break;
+      case 0xFD10EF:  // DOWN
+        // Handle DOWN button press
+        break;
+      case 0xFD906F:  // VOL-
+        // Handle VOL- button press
+        break;
+      case 0xFD50AF:  // UP
+        // Handle UP button press
+        break;
+      case 0xFD30CF:  // 0
+        // Handle 0 button press
+        break;
+      case 0xFDB04F:  // EQ
+        // Handle EQ button press
+        break;
+      case 0xFD708F:  // ST/REPT
+        // Handle ST/REPT button press
+        break;
+      case 0xFD08F7:  // 1
+        // Handle 1 button press
+        break;
+      case 0xFD8877:  // 2
+        // Handle 2 button press
+        break;
+      case 0xFD48B7:  // 3
+        // Handle 3 button press
+        break;
+      case 0xFD28D7:  // 4
+        // Handle 4 button press
+        break;
+      case 0xFDA857:  // 5
+        // Handle 5 button press
+        break;
+      case 0xFD6897:  // 6
+        // Handle 6 button press
+        break;
+      case 0xFD18E7:  // 7
+        // Handle 7 button press
+        break;
+      case 0xFD9867:  // 8
+        // Handle 8 button press
+        break;
+      case 0xFD58A7:  // 9
+        // Handle 9 button press
+        break;
+      default:
+        // Handle unknown or repeat command
+        break;
+    }
     irrecv.resume();  // Receive  the next value
   }
 }
