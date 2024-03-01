@@ -1,0 +1,13 @@
+{
+  "g": [
+    {
+      "type": 5,
+      "duration": 6000
+    },
+    {
+      "type": 2,
+      "stopDistance": 10,
+      "speed": 200
+    }
+  ]
+}

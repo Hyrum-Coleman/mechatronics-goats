@@ -1,0 +1,17 @@
+Directions
+
+  eForwards = 1,
+  eLeft = 2,
+  eBackwards = 3,
+  eRight = 4,
+  eCCW = 5,
+  eCW = 6,
+
+
+MoveType
+
+  eFreeDrive = 1,
+  eLineFollow = 2,
+  eScissor = 3,
+  eBelt = 4,
+  eCalibrate = 5,
