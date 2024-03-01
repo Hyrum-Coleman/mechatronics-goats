@@ -83,19 +83,19 @@ int main() {
 void loop(JsonDocument& doc) {
   // Control flow globals :(
   std::queue<Move>* moveQueue = new std::queue<Move>();
-  States state = eWaitingToStart;
+  States state = eStandby;
 
   // LOOP BEGINS
   // -------------------------------------------------
   while (true) {
     switch (state) {
-      case eWaitingToStart:
+      case eStandby:
         waitingToStart(doc, moveQueue, state);
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
         // Done executing moves
-        state = eWaitingToStart;
+        state = eStandby;
         break;
     }
   }
@@ -103,7 +103,9 @@ void loop(JsonDocument& doc) {
 }
 
 void waitingToStart(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
-  DEBUG_PRINTLN("WAITING TO START");
+  DEBUG_PRINT("STANDBY... <");
+  DEBUG_PRINT(millis()/1000.0);
+  DEBUG_PRINTLN(">");
   // Check serial for JSON packet to decide
   read_serial(doc);
   if (doc.isNull()) {

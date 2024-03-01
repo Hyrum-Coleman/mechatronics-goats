@@ -48,5 +48,5 @@ struct Move {
 
 enum States {
   eMoving = 0,
-  eWaitingToStart = 1,
+  eStandby = 1,
 };
