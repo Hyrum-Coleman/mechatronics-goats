@@ -34,7 +34,6 @@ int gDriveSpeed = 200;
 int gRemoteControlDuration = 1000;
 unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
-AdjustmentSubModes gCurrentAdjustmentSubMode = eNotAdjusting;
 // PINS
 const int cDistPin1 = A4;              // Left IR rangefinder sensor
 const int cDistPin2 = A5;              // Right IR rangefinder sensor
@@ -87,6 +86,7 @@ void loop(JsonDocument& doc) {
   // Control flow globals :(
   std::queue<Move>* moveQueue = new std::queue<Move>();
   States state = eStandbyIR;
+  AdjustmentSubModes currentAdjustmentSubMode = eNotAdjusting;
 
   // LOOP BEGINS
   // -------------------------------------------------
@@ -96,14 +96,14 @@ void loop(JsonDocument& doc) {
         standbyJSON(doc, moveQueue, state);
         break;
       case eStandbyIR:
-        standbyIR(doc, moveQueue, state);
+        standbyIR(doc, moveQueue, state, currentAdjustmentSubMode);
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
         state = eStandbyIR;  // Return to the default IR standby mode after executing moves
         break;
       case eAdjustmentMode:
-        executeAdjustmentMode(state);
+        executeAdjustmentMode(state, currentAdjustmentSubMode);
         break;
       case eStandbyRC:
         standbyRC(state);
@@ -138,7 +138,7 @@ void standbyJSON(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) 
   }
 }
 
-void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
+void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state, AdjustmentSubModes& currentAdjustmentSubMode) {
   DEBUG_PRINT("STANDBY IR... <");
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
@@ -172,7 +172,7 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
       break;
     case RemoteButtons::eFuncStop:  // Enter adjustment mode
       state = eAdjustmentMode;
-      gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset to not adjusting
+      currentAdjustmentSubMode = eNotAdjusting;  // Reset to not adjusting
       DEBUG_PRINTLN("Entering adjustment mode");
       break;
     // Add additional case handlers as needed
@@ -367,33 +367,33 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-void executeAdjustmentMode(States& state) {
+void executeAdjustmentMode(States& state, AdjustmentSubModes& currentAdjustmentSubMode) {
   if (!IrReceiver.decode()) {
     return;
   }
 
   switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
     case RemoteButtons::eZero:
-      gCurrentAdjustmentSubMode = eAdjustingDriveSpeed;
+      currentAdjustmentSubMode = eAdjustingDriveSpeed;
       DEBUG_PRINTLN("Selected gDriveSpeed for adjustment.");
       break;
     case RemoteButtons::eOne:
-      gCurrentAdjustmentSubMode = eAdjustingRemoteControlDuration;
+      currentAdjustmentSubMode = eAdjustingRemoteControlDuration;
       DEBUG_PRINTLN("Selected gRemoteControlDuration for adjustment.");
       break;
     case RemoteButtons::eVolPlus:
-      handleAdjustmentMode(400, 100, 10000, 500, [](int a, int b) {
+      handleAdjustmentMode(currentAdjustmentSubMode, 400, 100, 10000, 500, [](int a, int b) {
         return std::min(a, b);
       });
       break;
     case RemoteButtons::eVolMinus:
-      handleAdjustmentMode(0, -100, 0, -500, [](int a, int b) {
+      handleAdjustmentMode(currentAdjustmentSubMode, 0, -100, 0, -500, [](int a, int b) {
         return std::max(a, b);
       });
       break;
     case RemoteButtons::eFuncStop:
       state = eStandbyIR;                         // Go back to standby IR mode
-      gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset adjustment mode
+      currentAdjustmentSubMode = eNotAdjusting;  // Reset adjustment mode
       DEBUG_PRINTLN("Exiting adjustment mode.");
       break;
   }
@@ -402,8 +402,8 @@ void executeAdjustmentMode(States& state) {
 }
 
 // these inputs need to be named better, but honestly I have no earthly idea what they're supposed to represent.
-void handleAdjustmentMode(int input1, int input2, int input3, int input4, int (*pred)(int, int)) {
-  switch (gCurrentAdjustmentSubMode) {
+void handleAdjustmentMode(AdjustmentSubModes& currentAdjustmentSubMode, int input1, int input2, int input3, int input4, int (*pred)(int, int)) {
+  switch (currentAdjustmentSubMode) {
     case eAdjustingDriveSpeed:
       gDriveSpeed = pred(input1, gDriveSpeed + input2);
       DEBUG_PRINT("gDriveSpeed changed to: ");
