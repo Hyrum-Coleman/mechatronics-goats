@@ -251,6 +251,7 @@ void standbyRC(States& state) {
       break;
   }
   IrReceiver.resume();
+  gLastRCCommandTime = millis();
 }
 
 Move setupMoveFromIRCommand(RemoteButtons command) {
