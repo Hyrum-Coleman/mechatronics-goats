@@ -233,10 +233,10 @@ void standbyRC(States& state) {
           gL2Motors.setSpeeds(400, 0);
         break;
       case RemoteButtons::eTwo:
-          gL2Motors.setSpeeds(0, 200);
+          gL2Motors.setSpeeds(0, 320);
         break;
       case RemoteButtons::eEight:
-          gL2Motors.setSpeeds(0, -200);
+          gL2Motors.setSpeeds(0, -320);
         break;
       // Add additional case handlers as needed
       default:
@@ -544,7 +544,7 @@ void executeScissor(Move nextMove) {
   if (targetHeight == 1) {
     DEBUG_PRINTLN("MOVING PLATFORM UP");
     // Move towards the top limit switch
-    gL2Motors.setM2Speed(100);
+    gL2Motors.setM2Speed(320);
     while (digitalRead(cTopLimitSwitchPin) == HIGH) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
@@ -556,7 +556,7 @@ void executeScissor(Move nextMove) {
   } else if (targetHeight == 0) {
     DEBUG_PRINTLN("MOVING PLATFORM DOWN");
     // Move towards the bottom limit switch
-    gL2Motors.setM2Speed(-100);
+    gL2Motors.setM2Speed(-320);
     while (digitalRead(cBottomLimitSwitchPin) == HIGH) {
       // Check if timeout is exceeded
       if (millis() - startTime > timeout) {
