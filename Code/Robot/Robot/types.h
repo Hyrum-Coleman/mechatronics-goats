@@ -15,12 +15,38 @@ enum MoveType {
   eCalibrate = 5,
 };
 
+enum RemoteButtons {
+  ePwr = 69,
+  eVolPlus = 70,
+  eFuncStop = 71,
+  eBack = 68,         // |<<
+  eForward = 64,      // >|
+  eFastForward = 67,  // >>|
+  eDown = 7,
+  eVolMinus = 21,
+  eUp = 9,
+  eZero = 22,  // 0
+  eEq = 25,
+  eStRept = 13,
+  eOne = 12,
+  eTwo = 24,
+  eThree = 94,
+  eFour = 8,
+  eFive = 28,
+  eSix = 90,
+  eSeven = 66,
+  eEight = 82,
+  eNine = 74
+};
+
+
+
 // Onion for move-specific parameters
 union MoveParameters {
   struct {
-    Directions direction;  // which way to drive (will be [x,y,theta] in the future)
-    unsigned long duration;    // how far to go (will be distance not time in the future)
-  } freedriveParams;           // For eFreeDrive
+    Directions direction;    // which way to drive (will be [x,y,theta] in the future)
+    unsigned long duration;  // how far to go (will be distance not time in the future)
+  } freedriveParams;         // For eFreeDrive
 
   struct {
     unsigned long stopDistance;  // how far to stop away from obstacle when line following
@@ -48,5 +74,15 @@ struct Move {
 
 enum States {
   eMoving = 0,
-  eWaitingToStart = 1,
+  eStandbyJSON = 1,
+  eStandbyIR = 2,
+  eStandbyRC = 3,
+  eAdjustmentMode = 4
+};
+
+enum AdjustmentSubModes {
+  eNotAdjusting = 0,
+  eAdjustingDriveSpeed = 1,
+  eAdjustingRemoteControlDuration = 2
+  // Add more adjustment modes as needed
 };
