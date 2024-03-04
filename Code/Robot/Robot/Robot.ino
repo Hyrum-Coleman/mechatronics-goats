@@ -143,43 +143,45 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) {
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
 
-  if (IrReceiver.decode()) {
-    Move move;
-    switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
-      case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
-        state = eStandbyRC;
-        DEBUG_PRINTLN("Cycle state: Switching to RC mode");
-        break;
-      case RemoteButtons::eVolPlus:      // Drive forwards
-      case RemoteButtons::eBack:         // Drive left
-      case RemoteButtons::eFastForward:  // Drive right
-      case RemoteButtons::eDown:         // Rotate counterclockwise
-      case RemoteButtons::eVolMinus:     // Drive backwards
-      case RemoteButtons::eUp:           // Rotate clockwise
-      case RemoteButtons::eTwo:          // move platform up
-      case RemoteButtons::eEight:        // move platform down
-      case RemoteButtons::eFour:         // move belt backwards
-      case RemoteButtons::eSix:          // move belt forwards
-      case RemoteButtons::eZero:          // move belt forwards
-      case RemoteButtons::eOne:          // move belt forwards
-        // For each of these cases, setup the move according to the button press
-        move = setupMoveFromIRCommand((RemoteButtons)IrReceiver.decodedIRData.command);
-        moveQueue->push(move);
-        executeMoveSequence(moveQueue);
-        break;
-      case RemoteButtons::eFuncStop:  // Enter adjustment mode
-        state = eAdjustmentMode;
-        gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset to not adjusting
-        DEBUG_PRINTLN("Entering adjustment mode");
-        break;
-      // Add additional case handlers as needed
-      default:
-        DEBUG_PRINTLN("IR Command not handled.");
-        break;
-    }
-    IrReceiver.resume();
-    delay(100);  //debounce
+  if (!IrReceiver.decode()) {
+    return;
   }
+
+  Move move;
+  switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
+    case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
+      state = eStandbyRC;
+      DEBUG_PRINTLN("Cycle state: Switching to RC mode");
+      break;
+    case RemoteButtons::eVolPlus:      // Drive forwards
+    case RemoteButtons::eBack:         // Drive left
+    case RemoteButtons::eFastForward:  // Drive right
+    case RemoteButtons::eDown:         // Rotate counterclockwise
+    case RemoteButtons::eVolMinus:     // Drive backwards
+    case RemoteButtons::eUp:           // Rotate clockwise
+    case RemoteButtons::eTwo:          // move platform up
+    case RemoteButtons::eEight:        // move platform down
+    case RemoteButtons::eFour:         // move belt backwards
+    case RemoteButtons::eSix:          // move belt forwards
+    case RemoteButtons::eZero:         // move belt forwards
+    case RemoteButtons::eOne:          // move belt forwards
+      // For each of these cases, setup the move according to the button press
+      move = setupMoveFromIRCommand((RemoteButtons)IrReceiver.decodedIRData.command);
+      moveQueue->push(move);
+      executeMoveSequence(moveQueue);
+      break;
+    case RemoteButtons::eFuncStop:  // Enter adjustment mode
+      state = eAdjustmentMode;
+      gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset to not adjusting
+      DEBUG_PRINTLN("Entering adjustment mode");
+      break;
+    // Add additional case handlers as needed
+    default:
+      DEBUG_PRINTLN("IR Command not handled.");
+      break;
+  }
+  IrReceiver.resume();
+  delay(100);  //debounce
 }
 
 void standbyRC(States& state) {
@@ -187,71 +189,68 @@ void standbyRC(States& state) {
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
 
-  if (IrReceiver.decode()) {
-
-    gLastRCCommandTime = millis();
-    float wheelSpeeds[cNumberOfWheels];
-
-    switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
-      case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
-        state = eStandbyJSON;
-        DEBUG_PRINTLN("Cycle state: Switching to JSON mode");
-        break;
-      case RemoteButtons::eVolPlus:  // Drive forwards
-        gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
-        runWheelMotorsDirectly(wheelSpeeds);
-        break;
-
-      case RemoteButtons::eBack:  // Drive left
-        gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
-        runWheelMotorsDirectly(wheelSpeeds);
-        break;
-
-      case RemoteButtons::eFastForward:  // Drive right
-        gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
-        runWheelMotorsDirectly(wheelSpeeds);
-        break;
-
-      case RemoteButtons::eDown:  // Rotate counterclockwise
-        gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
-        runWheelMotorsDirectly(wheelSpeeds);
-        break;
-
-      case RemoteButtons::eVolMinus:  // Drive backwards
-        gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
-        runWheelMotorsDirectly(wheelSpeeds);
-        break;
-
-      case RemoteButtons::eUp:  // Rotate clockwise
-        gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
-        runWheelMotorsDirectly(wheelSpeeds);
-        break;
-      case RemoteButtons::eSix:
-        gL2Motors.setSpeeds(-400, 0);
-        break;
-      case RemoteButtons::eFour:
-          gL2Motors.setSpeeds(400, 0);
-        break;
-      case RemoteButtons::eTwo:
-          gL2Motors.setSpeeds(0, 320);
-        break;
-      case RemoteButtons::eEight:
-          gL2Motors.setSpeeds(0, -320);
-        break;
-      // Add additional case handlers as needed
-      default:
-        DEBUG_PRINTLN("IR Command not handled.");
-        break;
-    }
-    IrReceiver.resume();
-  } else {
+  if (!IrReceiver.decode()) {
     if (millis() - gLastRCCommandTime > cRCCommandTimeout) {
       gMecanumMotors.setSpeeds(0, 0, 0, 0);  // Set speeds to 0 after timeout
       gL2Motors.setSpeeds(0, 0);
-      // reset lastCommandTime here to prevent repeatedly setting speeds to 0
-      gLastRCCommandTime = millis();
+      gLastRCCommandTime = millis();  // update last command time to avoid constantly setting wheel speeds to 0
     }
+    return;
   }
+
+  float wheelSpeeds[cNumberOfWheels];
+  switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
+    case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
+      state = eStandbyJSON;
+      DEBUG_PRINTLN("Cycle state: Switching to JSON mode");
+      break;
+    case RemoteButtons::eVolPlus:  // Drive forwards
+      gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
+      runWheelMotorsDirectly(wheelSpeeds);
+      break;
+
+    case RemoteButtons::eBack:  // Drive left
+      gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
+      runWheelMotorsDirectly(wheelSpeeds);
+      break;
+
+    case RemoteButtons::eFastForward:  // Drive right
+      gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
+      runWheelMotorsDirectly(wheelSpeeds);
+      break;
+
+    case RemoteButtons::eDown:  // Rotate counterclockwise
+      gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
+      runWheelMotorsDirectly(wheelSpeeds);
+      break;
+
+    case RemoteButtons::eVolMinus:  // Drive backwards
+      gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
+      runWheelMotorsDirectly(wheelSpeeds);
+      break;
+
+    case RemoteButtons::eUp:  // Rotate clockwise
+      gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
+      runWheelMotorsDirectly(wheelSpeeds);
+      break;
+    case RemoteButtons::eSix:
+      gL2Motors.setSpeeds(-400, 0);
+      break;
+    case RemoteButtons::eFour:
+      gL2Motors.setSpeeds(400, 0);
+      break;
+    case RemoteButtons::eTwo:
+      gL2Motors.setSpeeds(0, 320);
+      break;
+    case RemoteButtons::eEight:
+      gL2Motors.setSpeeds(0, -320);
+      break;
+    // Add additional case handlers as needed
+    default:
+      DEBUG_PRINTLN("IR Command not handled.");
+      break;
+  }
+  IrReceiver.resume();
 }
 
 Move setupMoveFromIRCommand(RemoteButtons command) {
@@ -308,12 +307,12 @@ Move setupMoveFromIRCommand(RemoteButtons command) {
       break;
     case RemoteButtons::eZero:  // move belt forwards
       move.moveType = MoveType::eCalibrate;
-      move.params.calibrationParams.duration = 3000; // make this changable in the configuration mode
+      move.params.calibrationParams.duration = 3000;  // make this changable in the configuration mode
       break;
     case RemoteButtons::eOne:
       move.moveType = MoveType::eLineFollow;
       move.params.linefollowParams.speed = gDriveSpeed;
-      move.params.linefollowParams.stopDistance = 10; // make this changable in the configuration mode
+      move.params.linefollowParams.stopDistance = 10;  // make this changable in the configuration mode
     default:
       // Set to a default move or log an error
       break;
@@ -362,60 +361,59 @@ void read_serial(JsonDocument& doc) {
 
   // Test if parsing succeeds.
   if (error) {
-    //Commented because I'm using serial and its getting annoying
-    //Serial.print(F("deserializeJson() failed: "));
-    //Serial.println(error.f_str());
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
     return;
   }
 }
 
 void executeAdjustmentMode(States& state) {
-  if (IrReceiver.decode()) {
-    switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
-      case RemoteButtons::eZero:
-        gCurrentAdjustmentSubMode = eAdjustingDriveSpeed;
-        DEBUG_PRINTLN("Selected gDriveSpeed for adjustment.");
-        break;
-      case RemoteButtons::eOne:
-        gCurrentAdjustmentSubMode = eAdjustingRemoteControlDuration;
-        DEBUG_PRINTLN("Selected gRemoteControlDuration for adjustment.");
-        break;
-      case RemoteButtons::eVolPlus:
-        switch (gCurrentAdjustmentSubMode) {
-          case eAdjustingDriveSpeed:
-            gDriveSpeed = std::min(400, gDriveSpeed + 100);
-            DEBUG_PRINT("gDriveSpeed increased to: ");
-            DEBUG_PRINTLN(gDriveSpeed);
-            break;
-          case eAdjustingRemoteControlDuration:
-            gRemoteControlDuration = std::min(10000, gRemoteControlDuration + 500);
-            DEBUG_PRINT("gRemoteControlDuration increased to: ");
-            DEBUG_PRINTLN(gRemoteControlDuration);
-            break;
-        }
-        break;
-      case RemoteButtons::eVolMinus:
-        switch (gCurrentAdjustmentSubMode) {
-          case eAdjustingDriveSpeed:
-            gDriveSpeed = std::max(0, gDriveSpeed - 100);
-            DEBUG_PRINT("gDriveSpeed decreased to: ");
-            DEBUG_PRINTLN(gDriveSpeed);
-            break;
-          case eAdjustingRemoteControlDuration:
-            gRemoteControlDuration = std::max(0, gRemoteControlDuration - 500);
-            DEBUG_PRINT("gRemoteControlDuration decreased to: ");
-            DEBUG_PRINTLN(gRemoteControlDuration);
-            break;
-        }
-        break;
-      case RemoteButtons::eFuncStop:
-        state = eStandbyIR;                         // Go back to standby IR mode
-        gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset adjustment mode
-        DEBUG_PRINTLN("Exiting adjustment mode.");
-        break;
-    }
-    IrReceiver.resume();
-    delay(100);  //debounce
+  if (!IrReceiver.decode()) {
+    return;
+  }
+
+  switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
+    case RemoteButtons::eZero:
+      gCurrentAdjustmentSubMode = eAdjustingDriveSpeed;
+      DEBUG_PRINTLN("Selected gDriveSpeed for adjustment.");
+      break;
+    case RemoteButtons::eOne:
+      gCurrentAdjustmentSubMode = eAdjustingRemoteControlDuration;
+      DEBUG_PRINTLN("Selected gRemoteControlDuration for adjustment.");
+      break;
+    case RemoteButtons::eVolPlus:
+      handleAdjustmentMode(400, 100, 10000, 500, [](int a, int b) {
+        return std::min(a, b);
+      });
+      break;
+    case RemoteButtons::eVolMinus:
+      handleAdjustmentMode(0, -100, 0, -500, [](int a, int b) {
+        return std::max(a, b);
+      });
+      break;
+    case RemoteButtons::eFuncStop:
+      state = eStandbyIR;                         // Go back to standby IR mode
+      gCurrentAdjustmentSubMode = eNotAdjusting;  // Reset adjustment mode
+      DEBUG_PRINTLN("Exiting adjustment mode.");
+      break;
+  }
+  IrReceiver.resume();
+  delay(100);  //debounce
+}
+
+// these inputs need to be named better, but honestly I have no earthly idea what they're supposed to represent.
+void handleAdjustmentMode(int input1, int input2, int input3, int input4, int (*pred)(int, int)) {
+  switch (gCurrentAdjustmentSubMode) {
+    case eAdjustingDriveSpeed:
+      gDriveSpeed = pred(input1, gDriveSpeed + input2);
+      DEBUG_PRINT("gDriveSpeed changed to: ");
+      DEBUG_PRINTLN(gDriveSpeed);
+      break;
+    case eAdjustingRemoteControlDuration:
+      gRemoteControlDuration = pred(input3, gRemoteControlDuration + input4);
+      DEBUG_PRINT("gRemoteControlDuration changed to: ");
+      DEBUG_PRINTLN(gRemoteControlDuration);
+      break;
   }
 }
 
@@ -532,8 +530,6 @@ void executeLineFollow(Move nextMove) {
   }
 }
 
-
-
 // NOTE: THE DIRECTION OF THE MOTOR TO GO UP VS DOWN MAY NEED TO BE CHANGED!!!
 // If switches dont get triggered, this times out to avoid getting stuck in a loop
 void executeScissor(Move nextMove) {
@@ -591,40 +587,36 @@ void executeBelt(Move nextMove) {
 }
 
 void runWheelMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
-  if (targetWheelSpeeds) {
-    DEBUG_PRINTLN("Running wheel motors with blocking delay and speed ramp.");
-
-    // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
-    float mappedSpeeds[cNumberOfWheels];
-    memcpy(mappedSpeeds, targetWheelSpeeds, sizeof(mappedSpeeds));  // Copy to preserve original target speeds
-    mapWheelSpeeds(mappedSpeeds, gDriveSpeed);                      // map to global drive speed
-
-    // Ramp speeds up to mapped target values over a period (e.g., 200 milliseconds)
-    rampMotorSpeed(mappedSpeeds, 200, true);  // true ramps up
-
-    // Wait for the specified delay time after ramping to the target speed.
-    delay(delayTime);
-
-    // Optionally, smoothly ramp down to 0 for a soft stop.
-    rampMotorSpeed(mappedSpeeds, 200, false);  // false ramps down
-
-    DEBUG_PRINTLN("Motors stopped.");
-  } else {
+  if (!targetWheelSpeeds) {
     DEBUG_PRINTLN("Error: targetWheelSpeeds is null.");
   }
+
+  DEBUG_PRINTLN("Running wheel motors with blocking delay and speed ramp.");
+
+  // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
+  mapWheelSpeeds(targetWheelSpeeds, gDriveSpeed);  // map to global drive speed
+
+  // Ramp speeds up to mapped target values over a period (e.g., 200 milliseconds)
+  rampMotorSpeed(targetWheelSpeeds, 200, true);  // true ramps up
+
+  // Wait for the specified delay time after ramping to the target speed.
+  delay(delayTime);
+
+  // Optionally, smoothly ramp down to 0 for a soft stop.
+  rampMotorSpeed(targetWheelSpeeds, 200, false);  // false ramps down
+
+  DEBUG_PRINTLN("Motors stopped.");
 }
 
 void runWheelMotorsDirectly(float* targetWheelSpeeds) {
-  if (targetWheelSpeeds) {
-
-    // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
-    float mappedSpeeds[cNumberOfWheels];
-    mapWheelSpeeds(targetWheelSpeeds, gDriveSpeed);  // map to global drive speed
-    gMecanumMotors.setSpeeds(targetWheelSpeeds[0], -targetWheelSpeeds[1], targetWheelSpeeds[2], -targetWheelSpeeds[3]);
-
-  } else {
+  if (!targetWheelSpeeds) {
     DEBUG_PRINTLN("Error: targetWheelSpeeds is null.");
   }
+
+  // Map target wheel speeds from their current values to a scale suitable for the motor drivers before ramping.
+  float mappedSpeeds[cNumberOfWheels];
+  mapWheelSpeeds(targetWheelSpeeds, gDriveSpeed);  // map to global drive speed
+  gMecanumMotors.setSpeeds(targetWheelSpeeds[0], -targetWheelSpeeds[1], targetWheelSpeeds[2], -targetWheelSpeeds[3]);
 }
 
 void calibrate(Move nextMove) {
@@ -659,26 +651,24 @@ void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration, bool rampDirecti
     if (rampProgress >= 1.0) {
       // If ramp is complete, ensure target speed is set
       if (rampDirection == true) {
-        memcpy(currentSpeed, targetWheelSpeeds, sizeof(currentSpeed));
-        gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
+        gMecanumMotors.setSpeeds(targetWheelSpeeds[0], -targetWheelSpeeds[1], targetWheelSpeeds[2], -targetWheelSpeeds[3]);
       } else {
         gMecanumMotors.setSpeeds(0, 0, 0, 0);
       }
-      break;  // Exit loop
-    } else {
-      // Calculate and set intermediate speeds
-      for (int i = 0; i < cNumberOfWheels; i++) {
-        if (rampDirection == true) {
-          //ramp up
-          currentSpeed[i] = targetWheelSpeeds[i] * rampProgress;
-        } else {
-          // ramp down
-          currentSpeed[i] = targetWheelSpeeds[i] * (1 - rampProgress);
-        }
-      }
-      gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
+      return;  // all done
     }
 
+    // Calculate and set intermediate speeds
+    for (int i = 0; i < cNumberOfWheels; i++) {
+      if (rampDirection == true) {
+        //ramp up
+        currentSpeed[i] = targetWheelSpeeds[i] * rampProgress;
+      } else {
+        // ramp down
+        currentSpeed[i] = targetWheelSpeeds[i] * (1 - rampProgress);
+      }
+    }
+    gMecanumMotors.setSpeeds(currentSpeed[0], -currentSpeed[1], currentSpeed[2], -currentSpeed[3]);
     delay(10);  // Small delay to avoid updating too frequently
   }
 }
