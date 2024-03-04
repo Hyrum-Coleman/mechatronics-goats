@@ -288,14 +288,14 @@ Move setupMoveFromIRCommand(RemoteButtons command) {
       move.params.freedriveParams.duration = gRemoteControlDuration;
       break;
     //Uncomment this when limit switches are working
-    case RemoteButtons::eTwo:  // move platform up
-      move.moveType = MoveType::eScissor;
-      move.params.scissorParams.direction = 1;
-      break;
-    case RemoteButtons::eEight:  // move platform down
-      move.moveType = MoveType::eScissor;
-      move.params.scissorParams.direction = 0;
-      break;
+    //case RemoteButtons::eTwo:  // move platform up
+    //  move.moveType = MoveType::eScissor;
+    //  move.params.scissorParams.direction = 1;
+    //  break;
+    //case RemoteButtons::eEight:  // move platform down
+    //  move.moveType = MoveType::eScissor;
+    //  move.params.scissorParams.direction = 0;
+    //  break;
     case RemoteButtons::eFour:  // move belt backwards
       move.moveType = MoveType::eBelt;
       move.params.beltParams.direction = 1;
