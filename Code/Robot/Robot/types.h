@@ -39,9 +39,17 @@ enum RemoteButtons {
   eNine = 74
 };
 
+enum BlockColor {
+  Red,
+  Blue,
+  Yellow,
+};
 
+struct Block {
+  BlockColor color;
+};
 
-// Onion for move-specific parameters
+// Union for move-specific parameters
 union MoveParameters {
   struct {
     Directions direction;    // which way to drive (will be [x,y,theta] in the future)
