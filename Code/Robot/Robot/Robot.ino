@@ -455,30 +455,35 @@ Move getNextMoveFromQueue(std::queue<Move>* queueToPopFrom) {
 void executeFreeDrive(Move nextMove) {
   float wheelSpeeds[cNumberOfWheels];  // Initialize motor speeds
   int delayTime = nextMove.params.freedriveParams.duration;
+  int y_velocity = 0;
+  int x_velocity = 0;
+  int omega = 0;
 
   switch (nextMove.params.freedriveParams.direction) {
     case eForwards:
-      gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
+      y_velocity = 10;
       break;
     case eLeft:
-      gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
+      x_velocity = -10;
       break;
     case eBackwards:
-      gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
+      y_velocity = -10;
       break;
     case eRight:
-      gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
+      x_velocity = 10;
       break;
     case eCCW:
-      gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
+      omega = 1.059;
       break;
     case eCW:
-      gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
+      omega = -1.059;
       break;
     default:
       DEBUG_PRINTLN("Unexpected input in direction switch for freedrive.");
       break;
   }
+  
+  gWheelbase->computeWheelSpeeds(x_velocity, y_velocity, omega, wheelSpeeds);
   runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
 }
 
