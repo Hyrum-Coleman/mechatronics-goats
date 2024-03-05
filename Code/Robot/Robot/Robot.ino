@@ -95,6 +95,7 @@ int main() {
 void loop(JsonDocument& doc) {
   // Control flow globals :(
   std::queue<Move>* moveQueue = new std::queue<Move>();
+  std::stack<Block>* blockStack = new std::stack<Block>();
   States state = eStandbyIR;
   AdjustmentSubModes currentAdjustmentSubMode = eNotAdjusting;
 
@@ -710,6 +711,17 @@ float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
   float averageDistance = sum / readingsQueue.size();
 
   return averageDistance;
+}
+
+void addBlockBelt(std::stack<Block>* blocks, Block blockToAdd) {
+  blocks->push(blockToAdd);
+  return;
+}
+
+Block getNextBlock(std::stack<Block>* blocks) {
+  Block topBlock = blocks->top();
+  blocks->pop();
+  return topBlock;
 }
 
 void setPinModes() {
