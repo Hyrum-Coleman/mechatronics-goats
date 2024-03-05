@@ -12,17 +12,18 @@
 // Include dependencies
 #include <Arduino.h>
 #include <ArduinoSTL.h>
+#include <queue>
+#include <stack>
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
 #include <DualTB9051FTGMotorShieldMod3230.h>
 #include <L298NMotorDriverMega.h>
 #include <QTRSensors.h>
-#include <queue>
+#include <IRremote.hpp>
+#include <Adafruit_APDS9960.h>
 #include "Wheelbase.h"
 #include "types.h"
-// these are both for IR reciever library
-//#include "PinDefinitionsAndMore.h"
-#include <IRremote.hpp>  // include the library
+
 
 // Global variables :(
 // QUANTITIES
