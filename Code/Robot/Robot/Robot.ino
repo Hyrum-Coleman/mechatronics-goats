@@ -772,6 +772,11 @@ RGB readGlobalColorSensor() {
   return rgb;
 }
 
+void addToStackFromRGB(std::stack<Block>* blocks, RGB rgb) {
+  Block newBlock = createBlock(rgb);
+
+  addBlockToBelt(blocks, newBlock);
+}
 
 void setPinModes() {
   pinMode(cTopLimitSwitchPin, INPUT);
