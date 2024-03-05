@@ -459,32 +459,27 @@ void executeFreeDrive(Move nextMove) {
   switch (nextMove.params.freedriveParams.direction) {
     case eForwards:
       gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
-      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eLeft:
       gWheelbase->computeWheelSpeeds(-10, 0, 0, wheelSpeeds);
-      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eBackwards:
       gWheelbase->computeWheelSpeeds(0, -10, 0, wheelSpeeds);
-      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eRight:
       gWheelbase->computeWheelSpeeds(10, 0, 0, wheelSpeeds);
-      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eCCW:
       gWheelbase->computeWheelSpeeds(0, 0, 1.059, wheelSpeeds);
-      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     case eCW:
       gWheelbase->computeWheelSpeeds(0, 0, -1.059, wheelSpeeds);
-      runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
       break;
     default:
       DEBUG_PRINTLN("Unexpected input in direction switch for freedrive.");
       break;
   }
+  runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
 }
 
 void executeLineFollow(Move nextMove) {
