@@ -107,7 +107,7 @@ void loop(JsonDocument& doc) {
         standbyJSON(doc, moveQueue, state);
         break;
       case eStandbyIR:
-        standbyIR(doc, moveQueue, state, currentAdjustmentSubMode);
+        standbyIR(doc, moveQueue, blocks, state, currentAdjustmentSubMode);
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
@@ -149,7 +149,7 @@ void standbyJSON(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) 
   }
 }
 
-void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, States& state, AdjustmentSubModes& currentAdjustmentSubMode) {
+void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>* blocks, States& state, AdjustmentSubModes& currentAdjustmentSubMode) {
   DEBUG_PRINT("STANDBY IR... <");
   DEBUG_PRINT(millis() / 1000.0);
   DEBUG_PRINTLN(">");
