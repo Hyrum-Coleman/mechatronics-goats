@@ -186,6 +186,19 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       currentAdjustmentSubMode = eNotAdjusting;  // Reset to not adjusting
       DEBUG_PRINTLN("Entering adjustment mode");
       break;
+    case RemoteButtons::eSeven:  // Color Sensor add to block queue
+      RGB colorReading = readGlobalColorSensor();
+      addToStackFromRGB(blocks, colorReading);
+      break;
+    case RemoteButtons::eFive:  // Inspect stack
+      if (blocks->empty()) {
+        DEBUG_PRINTLN("Stack is empty");
+        break;
+      }
+      Block topBlock = getNextBlock(blocks);
+      DEBUG_PRINT("Block at top of stack: ");
+      DEBUG_PRINTLN(topBlock.color);
+      break;
     // Add additional case handlers as needed
     default:
       DEBUG_PRINTLN("IR Command not handled.");
