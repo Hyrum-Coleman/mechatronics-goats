@@ -756,6 +756,23 @@ Block createBlock(RGB rgb) {
   return newBlock;
 }
 
+// This function reads the color sensor and stores it in the RGB struct
+// Important to note that the clear channel value is currently being discarded.
+RGB readGlobalColorSensor() {
+  if (!g_apds.colorDataReady()) {
+    DEBUG_PRINTLN("Failed to collect color data");
+    return;
+  }
+
+  RGB rgb;
+  int c;
+
+  g_apds.getColorData(rgb.r, rgb.g, rgb.b, c);
+
+  return rgb;
+}
+
+
 void setPinModes() {
   pinMode(cTopLimitSwitchPin, INPUT);
   pinMode(cBottomLimitSwitchPin, INPUT);
