@@ -47,7 +47,7 @@ uint16_t sensorValues[cSensorCount];
 std::queue<float> gDistSensor1Readings;
 std::queue<float> gDistSensor2Readings;
 QTRSensors gQtr;
-Adafruit_APDS9960 apds;
+Adafruit_APDS9960 g_apds;
 
 // Motor globals
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
@@ -79,13 +79,13 @@ int main() {
   IrReceiver.begin(cIrRecievePin, true);  // true for enable IR feedback
 
   // Start the color sensor
-  apds.enable();
+  g_apds.enable();
 
-  if (!apds.begin()) {
+  if (!g_apds.begin()) {
     DEBUG_PRINTLN("Error initializing adafruit color sensor");
   }
 
-  apds.enableColor(true);
+  g_apds.enableColor(true);
 
   setPinModes();
 
