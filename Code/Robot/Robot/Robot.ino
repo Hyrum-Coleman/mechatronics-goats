@@ -79,7 +79,7 @@ int main() {
   IrReceiver.begin(cIrRecievePin, true);  // true for enable IR feedback
 
   // Start the color sensor
-  apds.enable()
+  apds.enable();
 
   if (!apds.begin()) {
     DEBUG_PRINTLN("Error initializing adafruit color sensor");
