@@ -190,7 +190,7 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       RGB colorReading = readGlobalColorSensor();
       addToStackFromRGB(blocks, colorReading);
       break;
-    case RemoteButtons::eFive:  // Inspect stack
+    case RemoteButtons::eFive:  // Inspect stack one block at a time
       if (blocks->empty()) {
         DEBUG_PRINTLN("Stack is empty");
         break;
