@@ -49,6 +49,12 @@ struct Block {
   BlockColor color;
 };
 
+struct RGB {
+  int r;
+  int g;
+  int b;
+};
+
 // Union for move-specific parameters
 union MoveParameters {
   struct {
