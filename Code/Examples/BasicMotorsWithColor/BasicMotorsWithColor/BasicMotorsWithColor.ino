@@ -48,7 +48,7 @@ void loop() {
   apds.getColorData(r, g, b, c);
 
 
-  // very redimentary color detection logic:
+  // very rudimentary color detection logic:
 
   // if red block, turn on wheels
   if (r < 226 && r > 142) {
