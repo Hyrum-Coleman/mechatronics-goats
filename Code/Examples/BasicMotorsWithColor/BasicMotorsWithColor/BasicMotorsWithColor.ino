@@ -54,7 +54,7 @@ void loop() {
   if (r < 226 && r > 142) {
     Serial.println("Red block detected");
     wheels.setSpeeds(200, 200, 200, 200);
-  } else if (b > 75) {  // if blue block turn on belt forwards
+  } else if (b > 140) {  // if blue block turn on belt forwards
     Serial.println("Blue block detected");
     l2_driver.setM2Speed(200);
   } else if (r > 250 && g > 100) {  // if yellow block, drive belt backwards
