@@ -713,7 +713,7 @@ float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
   return averageDistance;
 }
 
-void addBlockBelt(std::stack<Block>* blocks, Block blockToAdd) {
+void addBlockToBelt(std::stack<Block>* blocks, Block blockToAdd) {
   blocks->push(blockToAdd);
   return;
 }
