@@ -726,31 +726,30 @@ Block getNextBlock(std::stack<Block>* blocks) {
 
 // This function handles the creation of block from raw rgb values
 // handles determining the bounds of a color, will need calibration based on sensor
-Block createBlock(int r, int g, int b) {
+Block createBlock(RGB rgb) {
   Block newBlock;
 
   // using rudimentary logic from example script
   // the magic numbers are based on my postlab values, our sensor values may differ
-  if (r < 226 && r > 142) {
+  if (rgb.r < 226 && rgb.r > 142) {
     DEBUG_PRINTLN("Red block detected");
     newBlock.color = BlockColor::Red;
-  } else if (b > 140) {
+  } else if (rgb.b > 140) {
     DEBUG_PRINTLN("Blue block detected");
     newBlock.color = BlockColor::Blue;
-  } else if (r > 250 && g > 100) {
+  } else if (rgb.r > 250 && rgb.g > 100) {
     DEBUG_PRINTLN("Yellow block detected");
     newBlock.color = BlockColor::Yellow;
   } else {  // not within rudimentary bounds, print value
     DEBUG_PRINTLN("Uncertain about the color");
     DEBUG_PRINT("RGB: (");
-    DEBUG_PRINT(r);
+    DEBUG_PRINT(rgb.r);
     DEBUG_PRINT(", ");
-    DEBUG_PRINT(g);
+    DEBUG_PRINT(rgb.g);
     DEBUG_PRINT(", ");
-    DEBUG_PRINT(b);
-    DEBUG_PRINT(") Clear Channel: ");
-    DEBUG_PRINTLN(c);
-    DEBUG_PRINTLN("Setting color to red to keep running");
+    DEBUG_PRINT(rgb.b);
+    DEBUG_PRINTLN(")");
+    DEBUG_PRINTLN("Setting color to red to avoid crashing");
     newBlock.color = BlockColor::Red;
   }
 
