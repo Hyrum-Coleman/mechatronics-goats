@@ -404,7 +404,7 @@ void executeAdjustmentMode(States& state, AdjustmentSubModes& currentAdjustmentS
       });
       break;
     case RemoteButtons::eFuncStop:
-      state = eStandbyIR;                         // Go back to standby IR mode
+      state = eStandbyIR;                        // Go back to standby IR mode
       currentAdjustmentSubMode = eNotAdjusting;  // Reset adjustment mode
       DEBUG_PRINTLN("Exiting adjustment mode.");
       break;
@@ -493,7 +493,7 @@ void executeFreeDrive(Move nextMove) {
       DEBUG_PRINTLN("Unexpected input in direction switch for freedrive.");
       break;
   }
-  
+
   gWheelbase->computeWheelSpeeds(x_velocity, y_velocity, omega, wheelSpeeds);
   runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
 }
@@ -722,6 +722,39 @@ Block getNextBlock(std::stack<Block>* blocks) {
   Block topBlock = blocks->top();
   blocks->pop();
   return topBlock;
+}
+
+// This function handles the creation of block from raw rgb values
+// handles determining the bounds of a color, will need calibration based on sensor
+Block createBlock(int r, g, b) {
+  Block newBlock;
+
+  // using rudimentary logic from example script
+  // the magic numbers are based on my postlab values, our sensor values may differ
+  if (r < 226 && r > 142) {
+    DEBUG_PRINTLN("Red block detected");
+    newBlock.color = BlockColor::Red;
+  } else if (b > 140) {
+    DEBUG_PRINTLN("Blue block detected");
+    newBlock.color = BlockColor::Blue;
+  } else if (r > 250 && g > 100) {
+    DEBUG_PRINTLN("Yellow block detected");
+    newBlock.color = BlockColor::Yellow;
+  } else {  // not within rudimentary bounds, print value
+    DEBUG_PRINTLN("Uncertain about the color");
+    DEBUG_PRINT("RGB: (");
+    DEBUG_PRINT(r);
+    DEBUG_PRINT(", ");
+    DEBUG_PRINT(g);
+    DEBUG_PRINT(", ");
+    DEBUG_PRINT(b);
+    DEBUG_PRINT(") Clear Channel: ");
+    DEBUG_PRINTLN(c);
+    DEBUG_PRINTLN("Setting color to red to keep running");
+    newBlock.color = BlockColor::Red;
+  }
+
+  return newBlock;
 }
 
 void setPinModes() {
