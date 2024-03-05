@@ -726,7 +726,7 @@ Block getNextBlock(std::stack<Block>* blocks) {
 
 // This function handles the creation of block from raw rgb values
 // handles determining the bounds of a color, will need calibration based on sensor
-Block createBlock(int r, g, b) {
+Block createBlock(int r, int g, int b) {
   Block newBlock;
 
   // using rudimentary logic from example script
