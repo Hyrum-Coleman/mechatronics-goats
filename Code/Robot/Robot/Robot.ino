@@ -95,7 +95,7 @@ int main() {
 void loop(JsonDocument& doc) {
   // Control flow globals :(
   std::queue<Move>* moveQueue = new std::queue<Move>();
-  std::stack<Block>* blockStack = new std::stack<Block>();
+  std::stack<Block>* blocks = new std::stack<Block>();
   States state = eStandbyIR;
   AdjustmentSubModes currentAdjustmentSubMode = eNotAdjusting;
 
