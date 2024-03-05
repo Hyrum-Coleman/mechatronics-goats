@@ -8,7 +8,7 @@ void setup() {
   apds.enable();
 
   if (!apds.begin()) {
-    Serial.println("Initialization Failed :("); // might need the Adafruit_BusIO library idk tho.
+    Serial.println("Initialization Failed :("); // might need the Adafruit_BusIO library idk tho. it's in big L Libraries
   }
 
   apds.enableGesture(false);
