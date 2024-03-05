@@ -5,8 +5,10 @@ Adafruit_APDS9960 apds;
 void setup() {
   Serial.begin(9600);
 
+  apds.enable();
+
   if (!apds.begin()) {
-    Serial.println("Initialization Failed :(");
+    Serial.println("Initialization Failed :("); // might need the Adafruit_BusIO library idk tho.
   }
 
   apds.enableGesture(false);
