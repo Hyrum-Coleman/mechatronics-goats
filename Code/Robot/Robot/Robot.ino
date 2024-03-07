@@ -774,7 +774,7 @@ Block createBlock(RGB rgb) {
 RGB readGlobalColorSensor() {
   if (!g_apds.colorDataReady()) {
     DEBUG_PRINTLN("Failed to collect color data");
-    return;
+    return RGB();
   }
 
   RGB rgb;
