@@ -50,9 +50,9 @@ struct Block {
 };
 
 struct RGB {
-  int r;
-  int g;
-  int b;
+  uint16_t r;
+  uint16_t g;
+  uint16_t b;
 };
 
 // Union for move-specific parameters

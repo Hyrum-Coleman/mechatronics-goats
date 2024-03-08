@@ -798,9 +798,9 @@ RGB readGlobalColorSensor() {
   }
 
   RGB rgb;
-  int c;
+  uint16_t c;
 
-  g_apds.getColorData(rgb.r, rgb.g, rgb.b, c);
+  g_apds.getColorData(&rgb.r, &rgb.g, &rgb.b, &c);
 
   return rgb;
 }
