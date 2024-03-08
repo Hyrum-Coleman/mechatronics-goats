@@ -29,18 +29,23 @@
 // QUANTITIES
 const int cNumberOfWheels = 4;
 const uint8_t cSensorCount = 8;
+const int cMaxBlocks = 5;
 // PARAMETERS
 const int cFilterWindowSize = 20;
 int gDriveSpeed = 200;
 int gRemoteControlDuration = 1000;
 unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
+const unsigned long cReloadTimeout = 5000;
+const unsigned int cProximityThreshold = 175;
+const float cHallReloadingThreshold = 2.23; // This needs to be tested by hand.
 // PINS
 const int cDistPin1 = A4;              // Left IR rangefinder sensor
 const int cDistPin2 = A5;              // Right IR rangefinder sensor
-const int cTopLimitSwitchPin = 53;     // Replace XX with the actual pin number
-const int cBottomLimitSwitchPin = 52;  // Replace YY with the actual pin number
-const int cIrRecievePin = 11;          // IR Reciever
+const int cTopLimitSwitchPin = 53;
+const int cBottomLimitSwitchPin = 52;
+const int cIrRecievePin = 11;
+const int cHallSensorPin = A6;
 
 // Sensor globals
 uint16_t sensorValues[cSensorCount];
@@ -53,6 +58,9 @@ Adafruit_APDS9960 g_apds;
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
+
+// For keeping track of previous standby state so we can return to it
+States gLastStandbyState;
 
 int main() {
   init();  // Initialize board itself
@@ -86,6 +94,7 @@ int main() {
   }
 
   g_apds.enableColor(true);
+  //g_apds.enableProximity(true);
 
   setPinModes();
 
@@ -95,6 +104,7 @@ int main() {
 void loop(JsonDocument& doc) {
   // Control flow globals :(
   std::queue<Move>* moveQueue = new std::queue<Move>();
+  std::queue<MicroMoves>* microMoveQueue = new std::queue<MicroMoves>();
   std::stack<Block>* blocks = new std::stack<Block>();
   States state = eStandbyIR;
   AdjustmentSubModes currentAdjustmentSubMode = eNotAdjusting;
@@ -105,19 +115,26 @@ void loop(JsonDocument& doc) {
     switch (state) {
       case eStandbyJSON:
         standbyJSON(doc, moveQueue, state);
+        gLastStandbyState = eStandbyJSON;
         break;
       case eStandbyIR:
         standbyIR(doc, moveQueue, blocks, state, currentAdjustmentSubMode);
+        gLastStandbyState = eStandbyIR;
         break;
       case eMoving:
         executeMoveSequence(moveQueue);
-        state = eStandbyIR;  // Return to the default IR standby mode after executing moves
+        state = gLastStandbyState;  // return to the state we came from when done moving
+        break;
+      case eReloading:
+        executeReload(blocks, microMoveQueue);
+        state = gLastStandbyState;  // return to the state we came from when done reloading
         break;
       case eAdjustmentMode:
         executeAdjustmentMode(state, currentAdjustmentSubMode);
         break;
       case eStandbyRC:
         standbyRC(state);
+        gLastStandbyState = eStandbyRC;
         break;
         // Other cases as needed
     }
@@ -791,7 +808,97 @@ void addToStackFromRGB(std::stack<Block>* blocks, RGB rgb) {
   addBlockToBelt(blocks, newBlock);
 }
 
+void executeReload(std::stack<Block>* blocks, std::queue<MicroMoves>* microMovesQueue) {
+  // Drive belt backwards to collect blocks as they enter the belt. 
+  // In future, make it only drive when we need it to. I just dont know the timings yet.
+  gL2Motors.setM1Speed(-400);
+  // While our belt is not full of blocks,
+  while (blocks->size() < cMaxBlocks) {
+
+    // Uncomment this when rest of reloading works
+    // If the other team has pushed the button, we should wait until its ready to be pushed (using hall effect sensor)
+    if (currentHallVoltage() < cHallReloadingThreshold) { // check < vs > here
+      // if the magnet is not detected, the platform is up too high, meaning it is not yet ready for reloading.
+      // in that instance, we skip this iteration of the loop and wait until it is detected.
+      continue;
+    }
+    
+    // Get in button pushing position
+    // --> square up using proximity sensors
+    microMovesQueue->push(eSquareUpUsingProx);
+    // --> drive sideways slowly until in center of IR array
+    microMovesQueue->push(eCenterOnIrArray);
+    // Push button by driving forwards and then backwards (poll distance sensor?)
+    microMovesQueue->push(ePushButton);
+    // Dewit
+    executeMicroMoves(microMovesQueue);   
+
+    // When block is in front of color sensor/proximity sensor, detect its color and save it to the block stack
+    unsigned long startTime = millis();
+    bool blockDetected = false;
+    // Wait until the block passes in front of the color sensor. Times out after some amount of time if we dont get a block.
+    while (millis() - startTime < cReloadTimeout) {
+      if (g_apds.readProximity() > cProximityThreshold) { // high value means something is near
+        break;
+      }
+    }
+    if (!blockDetected) {
+      DEBUG_PRINTLN("Timeout reached when waiting for block.");
+      continue; // skip over the block saving if we didn't see a block
+    }
+
+    // Read the color of the detected block and add it to the belt
+    RGB blockColor = readGlobalColorSensor();
+    addToStackFromRGB(blocks, blockColor);
+  }
+    // Turn beltmotor off
+    gL2Motors.setM1Speed(0);
+}
+
+
+void executeMicroMoves(std::queue<MicroMoves>* microMovesQueue) {
+    while (!microMovesQueue->empty()) {
+        MicroMoves move = microMovesQueue->front(); 
+        microMovesQueue->pop();
+        switch (move) {
+            case eSquareUpUsingProx:
+                squareUpUsingProx();
+                break;
+            case eCenterOnIrArray:
+                centerOnIrArray();
+                break;
+            case ePushButton:
+                pushButton();
+                break;
+            // Add cases for other micro-moves as needed
+            default:
+                DEBUG_PRINTLN("Invalid micro move.");
+                break;
+        }
+    }
+}
+
+void squareUpUsingProx() {
+
+}
+
+void centerOnIrArray() {
+  
+}
+
+void pushButton() {
+  
+}
+
+float currentHallVoltage() {
+  float hallVoltage = analogRead(cHallSensorPin);
+  return hallVoltage;
+}
+
 void setPinModes() {
   pinMode(cTopLimitSwitchPin, INPUT);
   pinMode(cBottomLimitSwitchPin, INPUT);
+  pinMode(cHallSensorPin, INPUT);
+  pinMode(cDistPin1, INPUT);
+  pinMode(cDistPin2, INPUT);
 }
