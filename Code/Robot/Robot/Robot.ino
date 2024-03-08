@@ -48,7 +48,7 @@ const int cIrRecievePin = 11;
 const int cHallSensorPin = A6;
 
 // Sensor globals
-uint16_t sensorValues[cSensorCount];
+uint16_t gLineSensorValues[cSensorCount];
 std::queue<float> gDistSensor1Readings;
 std::queue<float> gDistSensor2Readings;
 QTRSensors gQtr;
@@ -216,16 +216,8 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       DEBUG_PRINT("Block at top of stack: ");
       DEBUG_PRINTLN(topBlock.color);
       break;
-    case RemoteButtons::eThree: // print current hall effect voltage and color reading for pm8 testing
-      DEBUG_PRINT("Hall sensor reading: ");
-      DEBUG_PRINTLN(getCurrentHallVoltage());
-      DEBUG_PRINT("RGB: (");
-      DEBUG_PRINT(rgb.r);
-      DEBUG_PRINT(", ");
-      DEBUG_PRINT(rgb.g);
-      DEBUG_PRINT(", ");
-      DEBUG_PRINT(rgb.b);
-      DEBUG_PRINTLN(")");
+    case RemoteButtons::eThree: // poll all sensors for testing and data collection
+        debugPrintSensors();
       break;
     // Add additional case handlers as needed
     default:
@@ -565,7 +557,7 @@ void executeLineFollow(Move nextMove) {
     // Non-blocking delay logic for motor speed adjustments
     if (currentMillis - lastMotorUpdateTime >= motorUpdateInterval) {
       // Perform line following logic
-      uint16_t position = gQtr.readLineBlack(sensorValues);
+      uint16_t position = gQtr.readLineBlack(gLineSensorValues);
       int error = position - 3500;         // Center is 3500 for 8 sensors
       int derivative = error - lastError;  // Calculate derivative. This is over 100ms because thats the motor update interval.
 
@@ -912,4 +904,36 @@ void setPinModes() {
   pinMode(cHallSensorPin, INPUT);
   pinMode(cDistPin1, INPUT);
   pinMode(cDistPin2, INPUT);
+}
+
+void debugPrintSensors () {
+      float hallVoltage = getCurrentHallVoltage();
+      RGB colorReading = readGlobalColorSensor();
+      uint8_t rgbProximity = g_apds.readProximity();
+      uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
+      float distanceLeft = pollRangefinder(cDistPin1);
+      float distanceRight = pollRangefinder(cDistPin2);
+
+      DEBUG_PRINT("Hall sensor reading: ");
+      DEBUG_PRINTLN(hallVoltage);
+
+      DEBUG_PRINT("RGB: (");
+      DEBUG_PRINT(colorReading.r);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(colorReading.g);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(colorReading.b);
+      DEBUG_PRINTLN(")");
+
+      DEBUG_PRINT("Color Sensor Proximity: ");
+      DEBUG_PRINTLN(rgbProximity);
+
+      DEBUG_PRINT("Line Position: ");
+      DEBUG_PRINTLN(linePosition);
+      
+      DEBUG_PRINT("Distance Sensor Readings (L,R): (");
+      DEBUG_PRINT(distanceLeft);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(distanceRight);
+      DEBUG_PRINTLN(")");
 }
