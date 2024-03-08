@@ -86,16 +86,22 @@ int main() {
   // Start the IR Reciever
   IrReceiver.begin(cIrRecievePin, true);  // true for enable IR feedback
 
+  DEBUG_PRINTLN("Making it to here");
+
   // Start the color sensor
-  g_apds.enable();
+  //g_apds.enable();
 
-  if (!g_apds.begin()) {
-    DEBUG_PRINTLN("Error initializing adafruit color sensor");
+  DEBUG_PRINTLN("right after enable call");
+
+  if(!g_apds.begin()){
+    DEBUG_PRINTLN("Initialization Failed :(");
   }
-
-  g_apds.enableColor(true);
-  //g_apds.enableProximity(true);
-
+  else {
+    DEBUG_PRINTLN("Device initialized!");
+    //enable color sensing mode
+    g_apds.enableColor(true);
+    //g_apds.enableProximity(true);
+  }
   setPinModes();
 
   loop(doc);
