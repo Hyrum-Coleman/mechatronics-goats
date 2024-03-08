@@ -216,6 +216,17 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       DEBUG_PRINT("Block at top of stack: ");
       DEBUG_PRINTLN(topBlock.color);
       break;
+    case RemoteButtons::eThree: // print current hall effect voltage and color reading for pm8 testing
+      DEBUG_PRINT("Hall sensor reading: ");
+      DEBUG_PRINTLN(getCurrentHallVoltage());
+      DEBUG_PRINT("RGB: (");
+      DEBUG_PRINT(rgb.r);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(rgb.g);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(rgb.b);
+      DEBUG_PRINTLN(")");
+      break;
     // Add additional case handlers as needed
     default:
       DEBUG_PRINTLN("IR Command not handled.");
@@ -817,7 +828,7 @@ void executeReload(std::stack<Block>* blocks, std::queue<MicroMoves>* microMoves
 
     // Uncomment this when rest of reloading works
     // If the other team has pushed the button, we should wait until its ready to be pushed (using hall effect sensor)
-    if (currentHallVoltage() < cHallReloadingThreshold) { // check < vs > here
+    if (getCurrentHallVoltage() < cHallReloadingThreshold) { // check < vs > here
       // if the magnet is not detected, the platform is up too high, meaning it is not yet ready for reloading.
       // in that instance, we skip this iteration of the loop and wait until it is detected.
       continue;
@@ -890,7 +901,7 @@ void pushButton() {
   
 }
 
-float currentHallVoltage() {
+float getCurrentHallVoltage() {
   float hallVoltage = analogRead(cHallSensorPin);
   return hallVoltage;
 }
