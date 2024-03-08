@@ -107,7 +107,8 @@ enum States {
   eStandbyIR = 2,
   eStandbyRC = 3,
   eAdjustmentMode = 4,
-  eReloading = 5
+  eReloading = 5,
+  eSensorDumpMode = 6
 };
 
 enum AdjustmentSubModes {

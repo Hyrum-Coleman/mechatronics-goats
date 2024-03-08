@@ -37,11 +37,11 @@ int gRemoteControlDuration = 1000;
 unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
-const unsigned int cProximityThreshold = 175;
-const float cHallReloadingThreshold = 2.23; // This needs to be tested by hand.
+const unsigned int cProximityThreshold = 50;
+const float cHallReloadingThreshold = 2.23;  // This needs to be tested by hand.
 // PINS
-const int cDistPin1 = A4;              // Left IR rangefinder sensor
-const int cDistPin2 = A5;              // Right IR rangefinder sensor
+const int cDistPin1 = A4;  // Left IR rangefinder sensor
+const int cDistPin2 = A5;  // Right IR rangefinder sensor
 const int cTopLimitSwitchPin = 53;
 const int cBottomLimitSwitchPin = 52;
 const int cIrRecievePin = 11;
@@ -52,7 +52,7 @@ uint16_t gLineSensorValues[cSensorCount];
 std::queue<float> gDistSensor1Readings;
 std::queue<float> gDistSensor2Readings;
 QTRSensors gQtr;
-Adafruit_APDS9960 g_apds;
+Adafruit_APDS9960 gApds;
 
 // Motor globals
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
@@ -86,14 +86,13 @@ int main() {
   // Start the IR Reciever
   IrReceiver.begin(cIrRecievePin, true);  // true for enable IR feedback
 
-  if(!g_apds.begin()){
+  if (!gApds.begin()) {
     DEBUG_PRINTLN("Initialization Failed :(");
-  }
-  else {
+  } else {
     DEBUG_PRINTLN("Device initialized!");
     //enable color sensing mode
-    g_apds.enableColor(true);
-    //g_apds.enableProximity(true);
+    gApds.enableColor(true);
+    gApds.enableProximity(true);
   }
   setPinModes();
 
@@ -130,6 +129,9 @@ void loop(JsonDocument& doc) {
         break;
       case eAdjustmentMode:
         executeAdjustmentMode(state, currentAdjustmentSubMode);
+        break;
+      case eSensorDumpMode:
+        executeSensorDumpMode(state);
         break;
       case eStandbyRC:
         standbyRC(state);
@@ -181,7 +183,7 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       DEBUG_PRINTLN("Cycle state: Switching to RC mode");
       break;
     // this case needs to be here and I have no idea why.
-    case RemoteButtons::eThree: // poll all sensors for testing and data collection
+    case RemoteButtons::eThree:  // poll all sensors for testing and data collection
       DEBUG_PRINTLN("PRINTING SENSOR DATA");
       debugPrintSensors();
       break;
@@ -245,8 +247,8 @@ void standbyRC(States& state) {
   float wheelSpeeds[cNumberOfWheels];
   switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
     case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
-      state = eStandbyJSON;
-      DEBUG_PRINTLN("Cycle state: Switching to JSON mode");
+      state = eSensorDumpMode;
+      DEBUG_PRINTLN("Cycle state: Switching to sensor dump mode");
       break;
     case RemoteButtons::eVolPlus:  // Drive forwards
       gWheelbase->computeWheelSpeeds(0, 10, 0, wheelSpeeds);
@@ -792,7 +794,7 @@ Block createBlock(RGB rgb) {
 // This function reads the color sensor and stores it in the RGB struct
 // Important to note that the clear channel value is currently being discarded.
 RGB readGlobalColorSensor() {
-  if (!g_apds.colorDataReady()) {
+  if (!gApds.colorDataReady()) {
     DEBUG_PRINTLN("Failed to collect color data");
     return RGB();
   }
@@ -800,7 +802,7 @@ RGB readGlobalColorSensor() {
   RGB rgb;
   uint16_t c;
 
-  g_apds.getColorData(&rgb.r, &rgb.g, &rgb.b, &c);
+  gApds.getColorData(&rgb.r, &rgb.g, &rgb.b, &c);
 
   return rgb;
 }
@@ -812,7 +814,7 @@ void addToStackFromRGB(std::stack<Block>* blocks, RGB rgb) {
 }
 
 void executeReload(std::stack<Block>* blocks, std::queue<MicroMoves>* microMovesQueue) {
-  // Drive belt backwards to collect blocks as they enter the belt. 
+  // Drive belt backwards to collect blocks as they enter the belt.
   // In future, make it only drive when we need it to. I just dont know the timings yet.
   gL2Motors.setM1Speed(-400);
   // While our belt is not full of blocks,
@@ -820,12 +822,12 @@ void executeReload(std::stack<Block>* blocks, std::queue<MicroMoves>* microMoves
 
     // Uncomment this when rest of reloading works
     // If the other team has pushed the button, we should wait until its ready to be pushed (using hall effect sensor)
-    if (getCurrentHallVoltage() < cHallReloadingThreshold) { // check < vs > here
+    if (getCurrentHallVoltage() < cHallReloadingThreshold) {  // check < vs > here
       // if the magnet is not detected, the platform is up too high, meaning it is not yet ready for reloading.
       // in that instance, we skip this iteration of the loop and wait until it is detected.
       continue;
     }
-    
+
     // Get in button pushing position
     // --> square up using proximity sensors
     microMovesQueue->push(eSquareUpUsingProx);
@@ -834,63 +836,60 @@ void executeReload(std::stack<Block>* blocks, std::queue<MicroMoves>* microMoves
     // Push button by driving forwards and then backwards (poll distance sensor?)
     microMovesQueue->push(ePushButton);
     // Dewit
-    executeMicroMoves(microMovesQueue);   
+    executeMicroMoves(microMovesQueue);
 
     // When block is in front of color sensor/proximity sensor, detect its color and save it to the block stack
     unsigned long startTime = millis();
     bool blockDetected = false;
     // Wait until the block passes in front of the color sensor. Times out after some amount of time if we dont get a block.
     while (millis() - startTime < cReloadTimeout) {
-      if (g_apds.readProximity() > cProximityThreshold) { // high value means something is near
+      if (gApds.readProximity() > cProximityThreshold) {  // high value means something is near
         break;
       }
     }
     if (!blockDetected) {
       DEBUG_PRINTLN("Timeout reached when waiting for block.");
-      continue; // skip over the block saving if we didn't see a block
+      continue;  // skip over the block saving if we didn't see a block
     }
 
     // Read the color of the detected block and add it to the belt
     RGB blockColor = readGlobalColorSensor();
     addToStackFromRGB(blocks, blockColor);
   }
-    // Turn beltmotor off
-    gL2Motors.setM1Speed(0);
+  // Turn beltmotor off
+  gL2Motors.setM1Speed(0);
 }
 
 
 void executeMicroMoves(std::queue<MicroMoves>* microMovesQueue) {
-    while (!microMovesQueue->empty()) {
-        MicroMoves move = microMovesQueue->front(); 
-        microMovesQueue->pop();
-        switch (move) {
-            case eSquareUpUsingProx:
-                squareUpUsingProx();
-                break;
-            case eCenterOnIrArray:
-                centerOnIrArray();
-                break;
-            case ePushButton:
-                pushButton();
-                break;
-            // Add cases for other micro-moves as needed
-            default:
-                DEBUG_PRINTLN("Invalid micro move.");
-                break;
-        }
+  while (!microMovesQueue->empty()) {
+    MicroMoves move = microMovesQueue->front();
+    microMovesQueue->pop();
+    switch (move) {
+      case eSquareUpUsingProx:
+        squareUpUsingProx();
+        break;
+      case eCenterOnIrArray:
+        centerOnIrArray();
+        break;
+      case ePushButton:
+        pushButton();
+        break;
+      // Add cases for other micro-moves as needed
+      default:
+        DEBUG_PRINTLN("Invalid micro move.");
+        break;
     }
+  }
 }
 
 void squareUpUsingProx() {
-
 }
 
 void centerOnIrArray() {
-  
 }
 
 void pushButton() {
-  
 }
 
 float getCurrentHallVoltage() {
@@ -906,34 +905,51 @@ void setPinModes() {
   pinMode(cDistPin2, INPUT);
 }
 
-void debugPrintSensors () {
-      float hallVoltage = getCurrentHallVoltage();
-      RGB colorReading = readGlobalColorSensor();
-      uint8_t rgbProximity = g_apds.readProximity();
-      uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
-      float distanceLeft = pollRangefinder(cDistPin1);
-      float distanceRight = pollRangefinder(cDistPin2);
+void executeSensorDumpMode(States& state) {
+  // Check IR Receiver specifically for the power button press to toggle state
+  if (IrReceiver.decode()) {
+    if ((RemoteButtons)IrReceiver.decodedIRData.command == RemoteButtons::ePwr) {
+      state = eStandbyJSON;
+      DEBUG_PRINTLN("Cycle state: Switching to Json mode");
+    }
+    IrReceiver.resume();
+    delay(100);  //debounce
+    return;
+  }
+  debugPrintSensors();
+}
 
-      DEBUG_PRINT("Hall sensor reading: ");
-      DEBUG_PRINTLN(hallVoltage);
+void debugPrintSensors() {
+  float hallVoltage = getCurrentHallVoltage();
+  RGB colorReading = readGlobalColorSensor();
+  uint8_t rgbProximity = gApds.readProximity();
+  uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
+  float distanceLeft = pollRangefinder(cDistPin1);
+  float distanceRight = pollRangefinder(cDistPin2);
 
-      DEBUG_PRINT("RGB: (");
-      DEBUG_PRINT(colorReading.r);
-      DEBUG_PRINT(", ");
-      DEBUG_PRINT(colorReading.g);
-      DEBUG_PRINT(", ");
-      DEBUG_PRINT(colorReading.b);
-      DEBUG_PRINTLN(")");
+  Serial2.print("Hall sensor: ");
+  Serial2.print(hallVoltage, 2); 
 
-      DEBUG_PRINT("Color Sensor Proximity: ");
-      DEBUG_PRINTLN(rgbProximity);
+  Serial2.print(" | RGB: (");
+  Serial2.print(colorReading.r);
+  Serial2.print(",");
+  Serial2.print(colorReading.g);
+  Serial2.print(",");
+  Serial2.print(colorReading.b);
+  Serial2.print(")");
 
-      DEBUG_PRINT("Line Position: ");
-      DEBUG_PRINTLN(linePosition);
-      
-      DEBUG_PRINT("Distance Sensor Readings (L,R): (");
-      DEBUG_PRINT(distanceLeft);
-      DEBUG_PRINT(", ");
-      DEBUG_PRINT(distanceRight);
-      DEBUG_PRINTLN(")");
+  Serial2.print(" | Proximity: ");
+  Serial2.print(rgbProximity);
+
+  Serial2.print(" | Line Pos: ");
+  Serial2.print(linePosition);
+
+  Serial2.print(" | Distances (L,R): (");
+  Serial2.print(distanceLeft, 2); 
+  Serial2.print(",");
+  Serial2.print(distanceRight, 2); 
+  Serial2.print(")");
+  Serial2.println("");
+
+  delay(200);
 }
