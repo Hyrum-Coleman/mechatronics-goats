@@ -86,13 +86,6 @@ int main() {
   // Start the IR Reciever
   IrReceiver.begin(cIrRecievePin, true);  // true for enable IR feedback
 
-  DEBUG_PRINTLN("Making it to here");
-
-  // Start the color sensor
-  //g_apds.enable();
-
-  DEBUG_PRINTLN("right after enable call");
-
   if(!g_apds.begin()){
     DEBUG_PRINTLN("Initialization Failed :(");
   }
@@ -187,6 +180,11 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       state = eStandbyRC;
       DEBUG_PRINTLN("Cycle state: Switching to RC mode");
       break;
+    // this case needs to be here and I have no idea why.
+    case RemoteButtons::eThree: // poll all sensors for testing and data collection
+      DEBUG_PRINTLN("PRINTING SENSOR DATA");
+      debugPrintSensors();
+      break;
     case RemoteButtons::eVolPlus:      // Drive forwards
     case RemoteButtons::eBack:         // Drive left
     case RemoteButtons::eFastForward:  // Drive right
@@ -222,10 +220,6 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       DEBUG_PRINT("Block at top of stack: ");
       DEBUG_PRINTLN(topBlock.color);
       break;
-    case RemoteButtons::eThree: // poll all sensors for testing and data collection
-        debugPrintSensors();
-      break;
-    // Add additional case handlers as needed
     default:
       DEBUG_PRINTLN("IR Command not handled.");
       break;
