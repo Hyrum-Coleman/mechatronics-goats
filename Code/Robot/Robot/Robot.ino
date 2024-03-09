@@ -45,7 +45,7 @@ const int cDistPin2 = A5;  // Right IR rangefinder sensor
 const int cTopLimitSwitchPin = 53;
 const int cBottomLimitSwitchPin = 52;
 const int cIrRecievePin = 11;
-const int cHallSensorPin = A6;
+const int cHallSensorPin = A3;
 
 // Sensor globals
 uint16_t gLineSensorValues[cSensorCount];
