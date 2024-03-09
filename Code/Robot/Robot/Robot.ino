@@ -178,6 +178,7 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
 
   Move move;
   switch ((RemoteButtons)IrReceiver.decodedIRData.command) {
+    DEBUG_PRINTLN(IrReceiver.decodedIRData.command);
     case RemoteButtons::ePwr:  // Toggle state between JSON and IR standby modes
       state = eStandbyRC;
       DEBUG_PRINTLN("Cycle state: Switching to RC mode");
@@ -210,6 +211,7 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       DEBUG_PRINTLN("Entering adjustment mode");
       break;
     case RemoteButtons::eSeven:  // Color Sensor add to block queue
+      DEBUG_PRINTLN("ADDING BLOCK TO QUEUE");
       RGB colorReading = readGlobalColorSensor();
       addToStackFromRGB(blocks, colorReading);
       break;
@@ -220,7 +222,7 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       }
       Block topBlock = getNextBlock(blocks);
       DEBUG_PRINT("Block at top of stack: ");
-      DEBUG_PRINTLN(topBlock.color);
+      DEBUG_PRINTLN(blockColorToString(topBlock.color));
       break;
     default:
       DEBUG_PRINTLN("IR Command not handled.");
@@ -921,26 +923,26 @@ void executeSensorDumpMode(States& state) {
   debugPrintSensors();
 }
 
-// todo: make this not shit. 
+// todo: make this not shit.
 // for now, it works 100% of the time, so thats good :)
 BlockColor predictColor(RGB colorReading) {
   int total = colorReading.r + colorReading.g + colorReading.b;
 
-  float r_norm = (float)colorReading.r/total;
-  float g_norm = (float)colorReading.g/total;
-  float b_norm = (float)colorReading.b/total;
+  float r_norm = (float)colorReading.r / total;
+  float g_norm = (float)colorReading.g / total;
+  float b_norm = (float)colorReading.b / total;
 
   if (r_norm > 0.6 && g_norm < 0.3 && b_norm < 0.3) {
     return BlockColor::Red;
   } else if (r_norm > 0.4 && g_norm > 0.28 && b_norm < 0.2) {
     return BlockColor::Yellow;
-  } else { // hack to get around not detecting blue very well
+  } else {  // hack to get around not detecting blue very well
     if (total < 10) {
       return BlockColor::Blue;
     }
     if (total > 30) {
-      if (b_norm > 0.4 && g_norm < 0.35 && r_norm < 0.35){
-      return BlockColor::Blue;
+      if (b_norm > 0.4 && g_norm < 0.35 && r_norm < 0.35) {
+        return BlockColor::Blue;
       }
     }
   }
@@ -977,11 +979,11 @@ void debugPrintSensors() {
   Serial2.print(",");
   Serial2.print(colorReading.b);
   Serial2.print(") = (");
-  Serial2.print((float)colorReading.r/total, 2);
+  Serial2.print((float)colorReading.r / total, 2);
   Serial2.print(",");
-  Serial2.print((float)colorReading.g/total, 2);
+  Serial2.print((float)colorReading.g / total, 2);
   Serial2.print(",");
-  Serial2.print((float)colorReading.b/total, 2);
+  Serial2.print((float)colorReading.b / total, 2);
   Serial2.print(")");
 
   Serial2.print(" | apdsProx: ");
