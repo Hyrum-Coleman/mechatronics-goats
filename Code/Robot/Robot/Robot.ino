@@ -759,33 +759,35 @@ Block getNextBlock(std::stack<Block>* blocks) {
   return topBlock;
 }
 
-// This function handles the creation of block from raw rgb values
-// handles determining the bounds of a color, will need calibration based on sensor
 Block createBlock(RGB rgb) {
   Block newBlock;
+  BlockColor color = predictColor(rgb);
 
-  // using rudimentary logic from example script
-  // the magic numbers are based on my postlab values, our sensor values may differ
-  if (rgb.r < 226 && rgb.r > 142) {
-    DEBUG_PRINTLN("Red block detected");
-    newBlock.color = BlockColor::Red;
-  } else if (rgb.b > 140) {
-    DEBUG_PRINTLN("Blue block detected");
-    newBlock.color = BlockColor::Blue;
-  } else if (rgb.r > 250 && rgb.g > 100) {
-    DEBUG_PRINTLN("Yellow block detected");
-    newBlock.color = BlockColor::Yellow;
-  } else {  // not within rudimentary bounds, print value
-    DEBUG_PRINTLN("Uncertain about the color");
-    DEBUG_PRINT("RGB: (");
-    DEBUG_PRINT(rgb.r);
-    DEBUG_PRINT(", ");
-    DEBUG_PRINT(rgb.g);
-    DEBUG_PRINT(", ");
-    DEBUG_PRINT(rgb.b);
-    DEBUG_PRINTLN(")");
-    DEBUG_PRINTLN("Setting color to red to avoid crashing");
-    newBlock.color = BlockColor::Red;
+  switch (color) {
+    case BlockColor::Red:
+      DEBUG_PRINTLN("Red block detected");
+      newBlock.color = BlockColor::Red;
+      break;
+    case BlockColor::Yellow:
+      DEBUG_PRINTLN("Yellow block detected");
+      newBlock.color = BlockColor::Yellow;
+      break;
+    case BlockColor::Blue:
+      DEBUG_PRINTLN("Blue block detected");
+      newBlock.color = BlockColor::Blue;
+      break;
+    case BlockColor::None:
+    default:
+      DEBUG_PRINTLN("Uncertain about the color");
+      DEBUG_PRINT("RGB: (");
+      DEBUG_PRINT(rgb.r);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(rgb.g);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(rgb.b);
+      DEBUG_PRINTLN(")");
+      DEBUG_PRINTLN("Setting color to None to avoid crashing");
+      newBlock.color = BlockColor::None;
   }
 
   return newBlock;
@@ -919,16 +921,54 @@ void executeSensorDumpMode(States& state) {
   debugPrintSensors();
 }
 
+// todo: make this not shit. 
+// for now, it works 100% of the time, so thats good :)
+BlockColor predictColor(RGB colorReading) {
+  int total = colorReading.r + colorReading.g + colorReading.b;
+
+  float r_norm = (float)colorReading.r/total;
+  float g_norm = (float)colorReading.g/total;
+  float b_norm = (float)colorReading.b/total;
+
+  if (r_norm > 0.6 && g_norm < 0.3 && b_norm < 0.3) {
+    return BlockColor::Red;
+  } else if (r_norm > 0.4 && g_norm > 0.28 && b_norm < 0.2) {
+    return BlockColor::Yellow;
+  } else { // hack to get around not detecting blue very well
+    if (total < 10) {
+      return BlockColor::Blue;
+    }
+    if (total > 30) {
+      if (b_norm > 0.4 && g_norm < 0.35 && r_norm < 0.35){
+      return BlockColor::Blue;
+      }
+    }
+  }
+  return BlockColor::None;
+}
+
+const char* blockColorToString(BlockColor color) {
+  switch (color) {
+    case BlockColor::Red: return "Red";
+    case BlockColor::Yellow: return "Yellow";
+    case BlockColor::Blue: return "Blue";
+    case BlockColor::None: return "None";
+    default: return "Unknown";
+  }
+}
+
 void debugPrintSensors() {
   float hallVoltage = getCurrentHallVoltage();
   RGB colorReading = readGlobalColorSensor();
+  int total = colorReading.r + colorReading.g + colorReading.b;
   uint8_t rgbProximity = gApds.readProximity();
   uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
   float distanceLeft = pollRangefinder(cDistPin1);
   float distanceRight = pollRangefinder(cDistPin2);
+  BlockColor predictedColor = predictColor(colorReading);
 
   Serial2.print("Hall sensor: ");
-  Serial2.print(hallVoltage, 2); 
+  Serial2.print(hallVoltage, 2);
 
   Serial2.print(" | RGB: (");
   Serial2.print(colorReading.r);
@@ -936,19 +976,29 @@ void debugPrintSensors() {
   Serial2.print(colorReading.g);
   Serial2.print(",");
   Serial2.print(colorReading.b);
+  Serial2.print(") = (");
+  Serial2.print((float)colorReading.r/total, 2);
+  Serial2.print(",");
+  Serial2.print((float)colorReading.g/total, 2);
+  Serial2.print(",");
+  Serial2.print((float)colorReading.b/total, 2);
   Serial2.print(")");
 
-  Serial2.print(" | Proximity: ");
+  Serial2.print(" | apdsProx: ");
   Serial2.print(rgbProximity);
 
   Serial2.print(" | Line Pos: ");
   Serial2.print(linePosition);
 
   Serial2.print(" | Distances (L,R): (");
-  Serial2.print(distanceLeft, 2); 
+  Serial2.print(distanceLeft, 2);
   Serial2.print(",");
-  Serial2.print(distanceRight, 2); 
+  Serial2.print(distanceRight, 2);
   Serial2.print(")");
+
+  Serial2.print(" | Predicted Color: ");
+  Serial2.print(blockColorToString(predictedColor));
+
   Serial2.println("");
 
   delay(200);

@@ -43,6 +43,7 @@ enum BlockColor {
   Red,
   Blue,
   Yellow,
+  None,
 };
 
 struct Block {
