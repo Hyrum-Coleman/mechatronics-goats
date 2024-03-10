@@ -44,6 +44,7 @@ enum BlockColor {
   Blue,
   Yellow,
   None,
+  UnCalibrated,
 };
 
 struct Block {

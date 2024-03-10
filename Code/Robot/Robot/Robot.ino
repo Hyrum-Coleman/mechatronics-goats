@@ -12,6 +12,7 @@
 // Include dependencies
 #include <Arduino.h>
 #include <ArduinoSTL.h>
+#include <math.h>
 #include <queue>
 #include <stack>
 #include <ArduinoJson.h>
@@ -37,7 +38,7 @@ int gRemoteControlDuration = 1000;
 unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
-const unsigned int cProximityThreshold = 50;
+const unsigned int cProximityThreshold = 10;
 const float cHallReloadingThreshold = 540;  // This needs to be tested by hand.
 // PINS
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
@@ -53,6 +54,9 @@ std::queue<float> gDistSensor1Readings;
 std::queue<float> gDistSensor2Readings;
 QTRSensors gQtr;
 Adafruit_APDS9960 gApds;
+float averageRedReadings[3] = {-1, -1, -1}; // Index 0 for red, 1 for green, 2 for blue
+float averageYellowReadings[3] = {-1, -1, -1};
+float averageBlueReadings[3] = {-1, -1, -1}; 
 
 // Motor globals
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
@@ -89,16 +93,11 @@ int main() {
   if (!gApds.begin()) {
     DEBUG_PRINTLN("Initialization Failed :(");
   } else {
-    DEBUG_PRINTLN("Device initialized!");
     //enable color sensing mode
     gApds.enableColor(true);
     gApds.enableProximity(true);
-    DEBUG_PRINT("DEFAULT ADC GAIN: ");
-    DEBUG_PRINTLN(gApds.getADCGain());
-    DEBUG_PRINT("DEFAULT ADC INTEGRTION TIME: ");
-    DEBUG_PRINTLN(gApds.getADCIntegrationTime());
 
-              /*
+    /*
             | color_gain    | Gain Multiplier | Note             |
             |---------------|-----------------|------------------|
             | 0x0           | 1x              | Power-on Default |
@@ -107,19 +106,19 @@ int main() {
             | 0x03          | 64x             |                  |
             */
 
-    //gApds.setADCGain(APDS9960_AGAIN_64X); // max gain as enum type
+    gApds.setADCGain(APDS9960_AGAIN_4X); // max gain as enum type
 
-            /*
-          | prop  | time     | counts| note            |
-          |-------|----------|-------|-----------------|
-          | 1     | 2.78 ms  | 1025  | Power-on Default|
-          | 10    | 27.8 ms  | 10241 |                 |
-          | 37    | 103 ms   | 37889 |                 |
-          | 72    | 200 ms   | 65535 |                 |
-          | 256   | 712 ms   | 65535 | Driver Default  |
-          */
+    /*
+            | prop  | time     | counts| note            |
+            |-------|----------|-------|-----------------|
+            | 1     | 2.78 ms  | 1025  | Power-on Default|
+            | 10    | 27.8 ms  | 10241 |                 |
+            | 37    | 103 ms   | 37889 |                 |
+            | 72    | 200 ms   | 65535 |                 |
+            | 256   | 712 ms   | 65535 | Driver Default  |
+            */
 
-    //gApds.setADCIntegrationTime(712); // max integration time in ms
+    gApds.setADCIntegrationTime(103); // max integration time in ms
   }
   setPinModes();
 
@@ -212,8 +211,8 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       break;
     // this case needs to be here and I have no idea why.
     case RemoteButtons::eThree:  // poll all sensors for testing and data collection
-      DEBUG_PRINTLN("PRINTING SENSOR DATA");
-      debugPrintSensors();
+      DEBUG_PRINTLN("CALIBRATING COLORS");
+      calibrateColorSensor();
       break;
     case RemoteButtons::eVolPlus:      // Drive forwards
     case RemoteButtons::eBack:         // Drive left
@@ -225,8 +224,8 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
     case RemoteButtons::eEight:        // move platform down
     case RemoteButtons::eFour:         // move belt backwards
     case RemoteButtons::eSix:          // move belt forwards
-    case RemoteButtons::eZero:         // move belt forwards
-    case RemoteButtons::eOne:          // move belt forwards
+    case RemoteButtons::eZero:         // Calibrate line follower
+    case RemoteButtons::eOne:          // Line follow
       // For each of these cases, setup the move according to the button press
       move = setupMoveFromIRCommand((RemoteButtons)IrReceiver.decodedIRData.command);
       moveQueue->push(move);
@@ -898,7 +897,7 @@ void executeMicroMoves(std::queue<MicroMoves>* microMovesQueue) {
     microMovesQueue->pop();
     switch (move) {
       case eSquareUpUsingProx:
-        squareUpUsingProx();
+        squareUpUsingProx(50);
         break;
       case eCenterOnIrArray:
         centerOnIrArray();
@@ -914,7 +913,29 @@ void executeMicroMoves(std::queue<MicroMoves>* microMovesQueue) {
   }
 }
 
-void squareUpUsingProx() {
+void squareUpUsingProx(int speed) {
+  float distanceLeft = pollRangefinderWithSMA(cDistPin1, gDistSensor1Readings);
+  float distanceRight = pollRangefinderWithSMA(cDistPin2, gDistSensor2Readings);
+  float tolerance = 0.5;
+
+  // Loop to adjust orientation until the robot is squared with the wall
+  while (abs(distanceRight - distanceLeft) > tolerance) {
+    if (distanceLeft < distanceRight) {
+      gMecanumMotors.setSpeeds(-speed, -speed, -speed, -speed);
+    } else {
+      gMecanumMotors.setSpeeds(speed, speed, speed, speed);
+    }
+
+    // Delay briefly to allow the rotation to take effect before remeasuring
+    delay(50);
+
+    // Update distances after adjustment
+  distanceLeft = pollRangefinderWithSMA(cDistPin1, gDistSensor1Readings);
+  distanceRight = pollRangefinderWithSMA(cDistPin2, gDistSensor2Readings);
+  }
+
+  // Stop all wheels once squared up with the wall
+  gMecanumMotors.setSpeeds(0, 0, 0, 0);
 }
 
 void centerOnIrArray() {
@@ -950,30 +971,132 @@ void executeSensorDumpMode(States& state) {
   debugPrintSensors();
 }
 
+// Function to calculate the Euclidean distance between two colors
+float colorDistance(float color1[3], float color2[3]) {
+  return sqrt(pow(color1[0] - color2[0], 2) + pow(color1[1] - color2[1], 2) + pow(color1[2] - color2[2], 2));
+}
+
+// helper function to check if the sensor is calibrated
+bool isCalibrated() {
+  // check if any of the average readings arrays still has its initial value
+  for (int i = 0; i < 3; i++) {
+    if (averageRedReadings[i] == -1 || averageYellowReadings[i] == -1 || averageBlueReadings[i] == -1) {
+      return false; // not calibrated
+    }
+  }
+  return true; // calibrated
+}
+
+void calibrateColorSensor() {
+  DEBUG_PRINTLN("Calibrate color sensor! First, place the red block.");
+  // for each red, yellow, blue blocks: wait for block to be placed infont of sensor.
+  for(int i = 0; i < 3; i++) {
+    
+    while(gApds.readProximity() <= 10) {
+              // Wait for a block to appear
+              delay(100); // Check every 100 milliseconds
+    }
+    DEBUG_PRINTLN("Block detected. Calculating...");
+
+    // block appears
+    // collect 20 samples of normalized color data and average it.
+    int sumR = 0;
+    int sumG = 0;
+    int sumB = 0;
+
+    // collect 20 samples
+    for (int j = 0; j < 20; j++) {
+      while (!gApds.colorDataReady()) {
+        delay(10);
+      }
+      RGB colorReading = readGlobalColorSensor();
+      sumR += colorReading.r;
+      sumG += colorReading.g;
+      sumB += colorReading.b;
+      delay(50); // small delay between readings
+    }
+
+    // calculate average
+    float avgR = sumR / 20.0;
+    float avgG = sumG / 20.0;
+    float avgB = sumB / 20.0;
+
+    // normalize the averaged values
+    float total = avgR + avgG + avgB;
+    float r_norm = avgR / total;
+    float g_norm = avgG / total;
+    float b_norm = avgB / total;
+
+    if (i == 0) { // red block
+      DEBUG_PRINTLN("Red block calibrated. Remove red block and place yellow block.");
+      averageRedReadings[0] = r_norm;
+      averageRedReadings[1] = g_norm;
+      averageRedReadings[2] = b_norm;
+    } else if (i == 1) { // yellow block
+      DEBUG_PRINTLN("Yellow block calibrated. Remove yellow block and place blue block.");
+      averageYellowReadings[0] = r_norm;
+      averageYellowReadings[1] = g_norm;
+      averageYellowReadings[2] = b_norm;
+    } else if (i == 2) { // blue block
+      DEBUG_PRINTLN("Blue block calibrated. All blocks calibrated.");
+      averageBlueReadings[0] = r_norm;
+      averageBlueReadings[1] = g_norm;
+      averageBlueReadings[2] = b_norm;
+    }
+
+    // wait for the block to be removed
+    while(gApds.readProximity() > 10) {
+      delay(100); // check every 100 milliseconds until the block is removed
+    }
+    DEBUG_PRINTLN("Block removed.");
+  }
+}
+
 // todo: make this not shit.
 // for now, it works 100% of the time, so thats good :)
 BlockColor predictColor(RGB colorReading) {
-  int total = colorReading.r + colorReading.g + colorReading.b;
+  /*int total = colorReading.r + colorReading.g + colorReading.b;
 
   float r_norm = (float)colorReading.r / total;
   float g_norm = (float)colorReading.g / total;
   float b_norm = (float)colorReading.b / total;
 
-  if (r_norm > 0.6 && g_norm < 0.3 && b_norm < 0.3) {
+  if (r_norm > 0.45 && g_norm < 0.25 && b_norm < 0.4) {
     return BlockColor::Red;
-  } else if (r_norm > 0.4 && g_norm > 0.28 && b_norm < 0.2) {
+  } else if (r_norm < 0.25 && g_norm < 0.35 && b_norm > 0.4) {
+    return BlockColor::Blue;
+  } else if (r_norm > 0.38 && g_norm > 0.25 && b_norm < 0.30) {
     return BlockColor::Yellow;
-  } else {  // hack to get around not detecting blue very well
-    if (total < 10) {
-      return BlockColor::Blue;
-    }
-    if (total > 30) {
-      if (b_norm > 0.4 && g_norm < 0.35 && r_norm < 0.35) {
-        return BlockColor::Blue;
-      }
-    }
   }
-  return BlockColor::None;
+  return BlockColor::None;*/  
+
+  if (!isCalibrated()) {
+    return BlockColor::UnCalibrated;
+  }
+
+  float threshold = 0.15;
+
+  float colorSample[3] = {float(colorReading.r) / (colorReading.r + colorReading.g + colorReading.b), 
+                          float(colorReading.g) / (colorReading.r + colorReading.g + colorReading.b), 
+                          float(colorReading.b) / (colorReading.r + colorReading.g + colorReading.b)};
+
+  // calculate euclidian color distances to each average color reading
+  float distanceToRed = colorDistance(averageRedReadings, colorSample);
+  float distanceToYellow = colorDistance(averageYellowReadings, colorSample);
+  float distanceToBlue = colorDistance(averageBlueReadings, colorSample);
+
+  if (distanceToRed > threshold && distanceToYellow > threshold && distanceToBlue > threshold) {
+    return BlockColor::None; // none of the colors are close enough
+  }
+
+  // determine the closest color
+  if (distanceToRed <= distanceToYellow && distanceToRed <= distanceToBlue) {
+    return BlockColor::Red;
+  } else if (distanceToYellow <= distanceToRed && distanceToYellow <= distanceToBlue) {
+    return BlockColor::Yellow;
+  } else {
+    return BlockColor::Blue;
+  }
 }
 
 const char* blockColorToString(BlockColor color) {
@@ -982,6 +1105,7 @@ const char* blockColorToString(BlockColor color) {
     case BlockColor::Yellow: return "Yellow";
     case BlockColor::Blue: return "Blue";
     case BlockColor::None: return "None";
+    case BlockColor::UnCalibrated: return "Uncalibrated";
     default: return "Unknown";
   }
 }
