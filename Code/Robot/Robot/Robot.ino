@@ -38,7 +38,7 @@ unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
 const unsigned int cProximityThreshold = 50;
-const float cHallReloadingThreshold = 540; // This needs to be tested by hand.
+const float cHallReloadingThreshold = 540;  // This needs to be tested by hand.
 // PINS
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
 const int cDistPin2 = A5;  // Right IR rangefinder sensor
@@ -97,7 +97,26 @@ int main() {
     DEBUG_PRINTLN(gApds.getADCGain());
     DEBUG_PRINT("DEFAULT ADC INTEGRTION TIME: ");
     DEBUG_PRINTLN(gApds.getADCIntegrationTime());
+
+    /*
+| color_gain | Gain Multiplier | Note             |
+|------------|-----------------|------------------|
+| 0          | 1x              | Power-on Default |
+| 1          | 4x              | Driver Default   |
+| 2          | 16x             |                  |
+| 3          | 64x             |                  |
+*/
+
     //gApds.setADCGain(APDS9960_AGAIN_64X); // max gain
+    /*
+  | prop  | time     | counts| note            |
+  |-------|----------|-------|-----------------|
+  | 1     | 2.78 ms  | 1025  | Power-on Default|
+  | 10    | 27.8 ms  | 10241 |                 |
+  | 37    | 103 ms   | 37889 |                 |
+  | 72    | 200 ms   | 65535 |                 |
+  | 256   | 712 ms   | 65535 | Driver Default  |
+  */
     //gApds.setADCIntegrationTime(712); // max integration time
   }
   setPinModes();
@@ -1009,8 +1028,7 @@ void debugPrintSensors() {
 
   if (hallVoltage > cHallReloadingThreshold) {
     Serial2.print(" | Magnet: Yes");
-  }
-  else {
+  } else {
     Serial2.print(" | Magnet: No");
   }
 
