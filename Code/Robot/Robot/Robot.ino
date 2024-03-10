@@ -93,6 +93,7 @@ int main() {
     //enable color sensing mode
     gApds.enableColor(true);
     gApds.enableProximity(true);
+    gApds.setADCGain(APDS9960_AGAIN_64X); // trying this to fix sensitivity issue 
   }
   setPinModes();
 
