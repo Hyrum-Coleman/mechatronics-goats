@@ -38,7 +38,7 @@ unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
 const unsigned int cProximityThreshold = 50;
-const float cHallReloadingThreshold = 600; // This needs to be tested by hand.
+const float cHallReloadingThreshold = 540; // This needs to be tested by hand.
 // PINS
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
 const int cDistPin2 = A5;  // Right IR rangefinder sensor
@@ -969,7 +969,7 @@ void debugPrintSensors() {
   float distanceRight = pollRangefinder(cDistPin2);
   BlockColor predictedColor = predictColor(colorReading);
 
-  Serial2.print("Hall sensor: ");
+  Serial2.print("Hall: ");
   Serial2.print(hallVoltage, 2);
 
   Serial2.print(" | RGB: (");
@@ -989,17 +989,24 @@ void debugPrintSensors() {
   Serial2.print(" | apdsProx: ");
   Serial2.print(rgbProximity);
 
-  Serial2.print(" | Line Pos: ");
+  Serial2.print(" | Line: ");
   Serial2.print(linePosition);
 
-  Serial2.print(" | Distances (L,R): (");
+  Serial2.print(" | Prox (L,R): (");
   Serial2.print(distanceLeft, 2);
   Serial2.print(",");
   Serial2.print(distanceRight, 2);
   Serial2.print(")");
 
-  Serial2.print(" | Predicted Color: ");
+  Serial2.print(" | Color: ");
   Serial2.print(blockColorToString(predictedColor));
+
+  if (hallVoltage > cHallReloadingThreshold) {
+    Serial2.print(" | Magnet: Yes");
+  }
+  else {
+    Serial2.print(" | Magnet: No");
+  }
 
   Serial2.println("");
 
