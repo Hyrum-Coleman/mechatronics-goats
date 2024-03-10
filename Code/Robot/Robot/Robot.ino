@@ -93,7 +93,12 @@ int main() {
     //enable color sensing mode
     gApds.enableColor(true);
     gApds.enableProximity(true);
-    gApds.setADCGain(APDS9960_AGAIN_64X); // trying this to fix sensitivity issue 
+    DEBUG_PRINT("DEFAULT ADC GAIN: ");
+    DEBUG_PRINTLN(gApds.getADCGain());
+    DEBUG_PRINT("DEFAULT ADC INTEGRTION TIME: ");
+    DEBUG_PRINTLN(gApds.getADCIntegrationTime());
+    //gApds.setADCGain(APDS9960_AGAIN_64X); // trying this to fix sensitivity issue 
+    //gApds.setADCIntegrationTime(200); 
   }
   setPinModes();
 
