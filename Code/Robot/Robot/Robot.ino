@@ -97,8 +97,8 @@ int main() {
     DEBUG_PRINTLN(gApds.getADCGain());
     DEBUG_PRINT("DEFAULT ADC INTEGRTION TIME: ");
     DEBUG_PRINTLN(gApds.getADCIntegrationTime());
-    //gApds.setADCGain(APDS9960_AGAIN_64X); // trying this to fix sensitivity issue 
-    //gApds.setADCIntegrationTime(200); 
+    //gApds.setADCGain(APDS9960_AGAIN_64X); // max gain
+    //gApds.setADCIntegrationTime(712); // max integration time
   }
   setPinModes();
 
