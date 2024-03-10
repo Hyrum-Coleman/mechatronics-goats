@@ -98,25 +98,27 @@ int main() {
     DEBUG_PRINT("DEFAULT ADC INTEGRTION TIME: ");
     DEBUG_PRINTLN(gApds.getADCIntegrationTime());
 
-    /*
-| color_gain | Gain Multiplier | Note             |
-|------------|-----------------|------------------|
-| 0          | 1x              | Power-on Default |
-| 1          | 4x              | Driver Default   |
-| 2          | 16x             |                  |
-| 3          | 64x             |                  |
-*/
+              /*
+            | color_gain | Gain Multiplier | Note             |
+            |------------|-----------------|------------------|
+            | 0          | 1x              | Power-on Default |
+            | 1          | 4x              | Driver Default   |
+            | 2          | 16x             |                  |
+            | 3          | 64x             |                  |
+            */
 
     //gApds.setADCGain(APDS9960_AGAIN_64X); // max gain
-    /*
-  | prop  | time     | counts| note            |
-  |-------|----------|-------|-----------------|
-  | 1     | 2.78 ms  | 1025  | Power-on Default|
-  | 10    | 27.8 ms  | 10241 |                 |
-  | 37    | 103 ms   | 37889 |                 |
-  | 72    | 200 ms   | 65535 |                 |
-  | 256   | 712 ms   | 65535 | Driver Default  |
-  */
+
+            /*
+          | prop  | time     | counts| note            |
+          |-------|----------|-------|-----------------|
+          | 1     | 2.78 ms  | 1025  | Power-on Default|
+          | 10    | 27.8 ms  | 10241 |                 |
+          | 37    | 103 ms   | 37889 |                 |
+          | 72    | 200 ms   | 65535 |                 |
+          | 256   | 712 ms   | 65535 | Driver Default  |
+          */
+          
     //gApds.setADCIntegrationTime(712); // max integration time
   }
   setPinModes();
