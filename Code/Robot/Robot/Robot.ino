@@ -944,6 +944,14 @@ void executeMicroMoves(std::queue<MicroMoves>* microMovesQueue) {
   }
 }
 
+
+void prepareToPushButton() {
+  
+
+
+}
+
+
 /*void squareUpUsingProx(int speed) {
   float distanceLeft = pollRangefinder(cDistPin1) - 1;
   float distanceRight = pollRangefinder(cDistPin2);
@@ -1191,6 +1199,10 @@ BlockColor predictColor(RGB colorReading) {
 
   if (!isCalibrated()) {
     return BlockColor::UnCalibrated;
+  }
+
+  if (gApds.readProximity() < 10) {
+    return BlockColor::None;
   }
 
   float threshold = 0.15;
