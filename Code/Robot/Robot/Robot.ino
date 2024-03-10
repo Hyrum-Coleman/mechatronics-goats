@@ -99,15 +99,15 @@ int main() {
     DEBUG_PRINTLN(gApds.getADCIntegrationTime());
 
               /*
-            | color_gain | Gain Multiplier | Note             |
-            |------------|-----------------|------------------|
-            | 0          | 1x              | Power-on Default |
-            | 1          | 4x              | Driver Default   |
-            | 2          | 16x             |                  |
-            | 3          | 64x             |                  |
+            | color_gain    | Gain Multiplier | Note             |
+            |---------------|-----------------|------------------|
+            | 0x0           | 1x              | Power-on Default |
+            | 0x01          | 4x              | Driver Default   |
+            | 0x02          | 16x             |                  |
+            | 0x03          | 64x             |                  |
             */
 
-    //gApds.setADCGain(APDS9960_AGAIN_64X); // max gain
+    //gApds.setADCGain(APDS9960_AGAIN_64X); // max gain as enum type
 
             /*
           | prop  | time     | counts| note            |
@@ -118,8 +118,8 @@ int main() {
           | 72    | 200 ms   | 65535 |                 |
           | 256   | 712 ms   | 65535 | Driver Default  |
           */
-          
-    //gApds.setADCIntegrationTime(712); // max integration time
+
+    //gApds.setADCIntegrationTime(712); // max integration time in ms
   }
   setPinModes();
 
