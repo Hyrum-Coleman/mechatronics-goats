@@ -22,8 +22,10 @@
 #include <QTRSensors.h>
 #include <IRremote.hpp>
 #include <Adafruit_APDS9960.h>
+#include <PID.h>
 #include "Wheelbase.h"
 #include "types.h"
+
 
 
 // Global variables :(
@@ -1033,7 +1035,7 @@ void pushButton(int speed) {
   const float targetProximityForward = 4;    // target proximity in meters or consistent unit for moving forward
   const float targetProximityBackward = 10;  // target proximity in meters or consistent unit for reversing
 
-  // Drive forward until the proximity sensor reads less than 3 meters
+  // Drive forward until the proximity sensor reads less than 3 cm
   while (true) {
     float distanceLeft = pollRangefinder(cDistPin1);
     float distanceRight = pollRangefinder(cDistPin2);
