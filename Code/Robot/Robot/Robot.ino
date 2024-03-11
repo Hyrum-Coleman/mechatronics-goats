@@ -1179,23 +1179,7 @@ void calibrateColorSensor() {
   }
 }
 
-// todo: make this not shit.
-// for now, it works 100% of the time, so thats good :)
 BlockColor predictColor(RGB colorReading) {
-  /*int total = colorReading.r + colorReading.g + colorReading.b;
-
-  float r_norm = (float)colorReading.r / total;
-  float g_norm = (float)colorReading.g / total;
-  float b_norm = (float)colorReading.b / total;
-
-  if (r_norm > 0.45 && g_norm < 0.25 && b_norm < 0.4) {
-    return BlockColor::Red;
-  } else if (r_norm < 0.25 && g_norm < 0.35 && b_norm > 0.4) {
-    return BlockColor::Blue;
-  } else if (r_norm > 0.38 && g_norm > 0.25 && b_norm < 0.30) {
-    return BlockColor::Yellow;
-  }
-  return BlockColor::None;*/
 
   if (!isCalibrated()) {
     return BlockColor::UnCalibrated;
