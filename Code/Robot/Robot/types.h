@@ -39,9 +39,25 @@ enum RemoteButtons {
   eNine = 74
 };
 
+enum BlockColor {
+  Red,
+  Blue,
+  Yellow,
+  None,
+  UnCalibrated,
+};
 
+struct Block {
+  BlockColor color;
+};
 
-// Onion for move-specific parameters
+struct RGB {
+  uint16_t r;
+  uint16_t g;
+  uint16_t b;
+};
+
+// Union for move-specific parameters
 union MoveParameters {
   struct {
     Directions direction;    // which way to drive (will be [x,y,theta] in the future)
@@ -72,12 +88,29 @@ struct Move {
   MoveParameters params;
 };
 
+// Small moves that need to be fine tuned by hand.
+// This is because out 'Moves' can't quite be made general enough yet.
+// They will rely heavily on manually calibrated durations and offsets.
+enum MicroMoves { 
+  eSquareUpUsingProx = 0,
+  eCenterOnIrArray = 1,
+  ePushButton = 2,
+  ePlacementPositionBottomLeft = 3,
+  ePlacementPositionBottomMiddle = 4,
+  ePlacementPositionBottomRight = 5,
+  ePlacementPositionTopLeft = 6,
+  ePlacementPositionTopMiddle = 7,
+  ePlacementPositionTopRight = 8
+};
+
 enum States {
   eMoving = 0,
   eStandbyJSON = 1,
   eStandbyIR = 2,
   eStandbyRC = 3,
-  eAdjustmentMode = 4
+  eAdjustmentMode = 4,
+  eReloading = 5,
+  eSensorDumpMode = 6
 };
 
 enum AdjustmentSubModes {
