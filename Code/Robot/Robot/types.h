@@ -56,6 +56,12 @@ enum BlockColor {
   UnCalibrated,
 };
 
+struct Velocities {
+  float xDot;
+  float yDot;
+  float thetaDot;
+};
+
 struct Block {
   BlockColor color;
 };
@@ -65,6 +71,21 @@ struct RGB {
   uint16_t g;
   uint16_t b;
 };
+
+enum TerminationType {
+  LineCovered,
+  LineCentered,
+  AverageDistanceAway,
+  DistanceTraveled,
+  TimeExpired,
+};
+
+struct DrivingTerminationCondition {
+  TerminationType type;
+  int terminationValue;
+  bool tripped;
+};
+
 
 // Union for move-specific parameters
 union MoveParameters {

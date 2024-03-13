@@ -26,6 +26,38 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
   }
 }
 
+void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCondition term) {
+  // Array to store wheel speeds
+  float wheelSpeeds[cNumberOfWheels];
+  // Calculate required wheel speeds to achieve desired velocities
+  gWheelbase->computeWheelSpeeds(v.xDot , v.yDot, v.thetaDot, wheelSpeeds);
+  // Wheelspeeds now contains goal rad/sec values for each wheel. Needs to be in motors values
+  radSecToMotorDriverSpeeds(wheelSpeeds); // maps and constrains from -400 to 400 for motor drivers
+  // Wheelspeeds is now in motor driver units. 
+  // Account for the polarity of our motors.
+  wheelSpeeds[1] *= -1;
+  wheelSpeeds[3] *= -1;
+  // We now want to command the motors to those speeds. 
+  // More specifically, we want to ramp smoothly up to the goal speeds while numerically integrating our position until we reach the termination condition.
+  while (!term.tripped) {
+    // Call function that checks the condition based on the condition type. It takes in term.
+    // Inside that function, the termination condition gets tripped if the condition is met. This breaks the loop and we are done.
+    switch (term.type) {
+      case TerminationType::LineCovered:
+        break;
+      case TerminationType::LineCentered:
+        break;
+      case TerminationType::AverageDistanceAway:
+        break;
+      case TerminationType::DistanceTraveled:
+        break;
+      case TerminationType::TimeExpired:
+        break;
+      default:
+        break;
+    }
+  }
+}
 
 
 // Takes a freedrive move and makes it happen
