@@ -170,3 +170,11 @@ void loop(JsonDocument& doc) {
   }
   // -----------------------LOOP ENDS--------------------------
 }
+
+void setPinModes() {
+  pinMode(cTopLimitSwitchPin, INPUT);
+  pinMode(cBottomLimitSwitchPin, INPUT);
+  pinMode(cHallSensorPin, INPUT);
+  pinMode(cDistPin1, INPUT);
+  pinMode(cDistPin2, INPUT);
+}

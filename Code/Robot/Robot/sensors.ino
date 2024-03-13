@@ -1,3 +1,62 @@
+void addBlockToBelt(std::stack<Block>* blocks, Block blockToAdd) {
+  blocks->push(blockToAdd);
+  return;
+}
+
+
+
+Block getNextBlock(std::stack<Block>* blocks) {
+  Block topBlock = blocks->top();
+  blocks->pop();
+  return topBlock;
+}
+
+
+
+Block createBlock(RGB rgb) {
+  Block newBlock;
+  BlockColor color = predictColor(rgb);
+
+  switch (color) {
+    case BlockColor::Red:
+      DEBUG_PRINTLN("Red block detected");
+      newBlock.color = BlockColor::Red;
+      break;
+    case BlockColor::Yellow:
+      DEBUG_PRINTLN("Yellow block detected");
+      newBlock.color = BlockColor::Yellow;
+      break;
+    case BlockColor::Blue:
+      DEBUG_PRINTLN("Blue block detected");
+      newBlock.color = BlockColor::Blue;
+      break;
+    case BlockColor::None:
+    default:
+      DEBUG_PRINTLN("Uncertain about the color");
+      DEBUG_PRINT("RGB: (");
+      DEBUG_PRINT(rgb.r);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(rgb.g);
+      DEBUG_PRINT(", ");
+      DEBUG_PRINT(rgb.b);
+      DEBUG_PRINTLN(")");
+      DEBUG_PRINTLN("Setting color to None to avoid crashing");
+      newBlock.color = BlockColor::None;
+  }
+
+  return newBlock;
+}
+
+
+
+void addBlockToStackFromRGB(std::stack<Block>* blocks, RGB rgb) {
+  Block newBlock = createBlock(rgb);
+
+  addBlockToBelt(blocks, newBlock);
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 // Takes a BlockColor enumeration and returns a string that can be printed to the serial monitor. Not used for control flow purposes.
 const char* blockColorToString(BlockColor color) {
   switch (color) {
@@ -211,4 +270,62 @@ void calibrateIrArray(Move nextMove) {
   gMecanumMotors.setSpeeds(0, 0, 0, 0);
   DEBUG_PRINTLN("Done calibrating.");
 }
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+// Prints all of the sensor values at the current time neatly.
+void debugPrintSensors() {
+  float hallVoltage = getCurrentHallVoltage();
+  RGB colorReading = readGlobalColorSensor();
+  int total = colorReading.r + colorReading.g + colorReading.b;
+  uint8_t rgbProximity = gApds.readProximity();
+  uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
+  float distanceLeft = pollRangefinder(cDistPin1);
+  float distanceRight = pollRangefinder(cDistPin2);
+  BlockColor predictedColor = predictColor(colorReading);
+
+  Serial2.print("Hall: ");
+  Serial2.print(hallVoltage, 2);
+
+  Serial2.print(" | RGB: (");
+  Serial2.print(colorReading.r);
+  Serial2.print(",");
+  Serial2.print(colorReading.g);
+  Serial2.print(",");
+  Serial2.print(colorReading.b);
+  Serial2.print(") = (");
+  Serial2.print((float)colorReading.r / total, 2);
+  Serial2.print(",");
+  Serial2.print((float)colorReading.g / total, 2);
+  Serial2.print(",");
+  Serial2.print((float)colorReading.b / total, 2);
+  Serial2.print(")");
+
+  Serial2.print(" | apdsProx: ");
+  Serial2.print(rgbProximity);
+
+  Serial2.print(" | Line: ");
+  Serial2.print(linePosition);
+
+  Serial2.print(" | Prox (L,R): (");
+  Serial2.print(distanceLeft, 2);
+  Serial2.print(",");
+  Serial2.print(distanceRight, 2);
+  Serial2.print(")");
+
+  Serial2.print(" | Color: ");
+  Serial2.print(blockColorToString(predictedColor));
+
+  if (hallVoltage > cHallReloadingThreshold) {
+    Serial2.print(" | Magnet: Yes");
+  } else {
+    Serial2.print(" | Magnet: No");
+  }
+
+  Serial2.println("");
+
+  delay(200);
+}
+
+
 
