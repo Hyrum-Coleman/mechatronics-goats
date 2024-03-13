@@ -12,6 +12,7 @@
 //---------------------------------------------
 
 //-------------Include dependencies------------
+// Other peoples .h and .cpp files
 #include <Arduino.h>
 #include <ArduinoSTL.h>
 #include <math.h>
@@ -25,6 +26,7 @@
 #include <IRremote.hpp>
 #include <Adafruit_APDS9960.h>
 #include <PID.h>
+// Our custom .h and .cpp files
 #include "Wheelbase.h"
 #include "types.h"
 //---------------------------------------------
