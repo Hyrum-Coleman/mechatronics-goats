@@ -108,14 +108,6 @@ enum States {
   eStandbyJSON = 1,
   eStandbyIR = 2,
   eStandbyRC = 3,
-  eAdjustmentMode = 4,
-  eReloading = 5,
-  eSensorDumpMode = 6
-};
-
-enum AdjustmentSubModes {
-  eNotAdjusting = 0,
-  eAdjustingDriveSpeed = 1,
-  eAdjustingRemoteControlDuration = 2
-  // Add more adjustment modes as needed
+  eReloading = 4,
+  eSensorDumpMode = 5
 };
