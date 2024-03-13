@@ -20,6 +20,7 @@ void radSecToMotorDriverSpeeds(float* radSecWheelSpeeds) {
 
   for (int i = 0; i < cNumberOfWheels; i++) {
     radSecWheelSpeeds[i] = map(radSecWheelSpeeds[i], -cRobotMaxSpeedRadSec, cRobotMaxSpeedRadSec, -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
+    radSecWheelSpeeds[i] = constrain(radSecWheelSpeeds[i], -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
   }
 
 }
