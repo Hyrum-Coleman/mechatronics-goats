@@ -19,7 +19,7 @@ void radSecToMotorDriverSpeeds(float* radSecWheelSpeeds) {
   // those two scales need to be correlated, and if a requested speed is greater than the max possible speed, it should be cropped
 
   for (int i = 0; i < cNumberOfWheels; i++) {
-    wheelSpeeds[i] = map(wheelSpeeds[i], -cRobotMaxSpeedRadSec, cRobotMaxSpeedRadSec, -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
+    radSecWheelSpeeds[i] = map(radSecWheelSpeeds[i], -cRobotMaxSpeedRadSec, cRobotMaxSpeedRadSec, -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
   }
 
 }
