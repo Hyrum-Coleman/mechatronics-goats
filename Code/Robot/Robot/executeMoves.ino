@@ -1,3 +1,6 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 // For every move in a queue, do the move.
 void executeMoveSequence(std::queue<Move>* moveQueue) {
   while (!moveQueue->empty()) {
@@ -25,6 +28,9 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
     }
   }
 }
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
 
 // Takes a freedrive move and makes it happen
 void executeFreeDrive(Move nextMove) {
@@ -61,6 +67,9 @@ void executeFreeDrive(Move nextMove) {
   gWheelbase->computeWheelSpeeds(x_velocity, y_velocity, omega, wheelSpeeds);
   runWheelMotorsWithBlockingDelay(delayTime, wheelSpeeds);
 }
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
 
 // Takes a linefollowing move and makes it happen
 void executeLineFollow(Move nextMove) {
@@ -107,6 +116,9 @@ void executeLineFollow(Move nextMove) {
   }
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 // NOTE: THE DIRECTION OF THE MOTOR TO GO UP VS DOWN MAY NEED TO BE CHANGED!!!
 // If switches dont get triggered, this times out to avoid getting stuck in a loop
 // Executes a scissor lift move
@@ -144,6 +156,9 @@ void executeScissor(Move nextMove) {
   gL2Motors.setM2Speed(0);  // Stop the motor once the limit switch is reached or timeout occurs
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 // Executes a belt move
 void executeBelt(Move nextMove) {
   unsigned long duration = nextMove.params.beltParams.duration;  // Duration in milliseconds
@@ -164,6 +179,9 @@ void executeBelt(Move nextMove) {
 
   DEBUG_PRINTLN("Done moving belt.");
 }
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
 
 // ------------------------------------------------MOVE-RELATED-UTILS-----------------------------------------------
 
@@ -243,3 +261,6 @@ Move setupMoveFromIRCommand(RemoteButtons command) {
   return move;
 }
 // -------------------------------------------------------------------------------------------------------------
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 

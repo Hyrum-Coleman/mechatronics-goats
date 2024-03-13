@@ -1,3 +1,6 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 // Drives for an amount of time after ramping up to a goal speed.
 void runWheelMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
   if (!targetWheelSpeeds) {
@@ -21,6 +24,9 @@ void runWheelMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
   DEBUG_PRINTLN("Motors stopped.");
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 // Maps goal speeds to the motor libraries range (0 to 400) and sets the motors to those speeds. 
 void runWheelMotorsDirectly(float* targetWheelSpeeds) {
   if (!targetWheelSpeeds) {
@@ -32,6 +38,9 @@ void runWheelMotorsDirectly(float* targetWheelSpeeds) {
   mapWheelSpeeds(targetWheelSpeeds, gDriveSpeed);  // map to global drive speed
   gMecanumMotors.setSpeeds(targetWheelSpeeds[0], -targetWheelSpeeds[1], targetWheelSpeeds[2], -targetWheelSpeeds[3]);
 }
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
 
 // Ramps motor speed from 0 to targetSpeed over a specified duration
 void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration, bool rampDirection) {
@@ -67,3 +76,6 @@ void rampMotorSpeed(float* targetWheelSpeeds, int rampDuration, bool rampDirecti
     delay(10);  // Small delay to avoid updating too frequently
   }
 }
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
