@@ -223,7 +223,11 @@ float pollRangefinder(int pin) {
   return distance;
 }
 
-
+// Returns the calculated distance of our rangefinder. 
+float pollRangefinderNoConversion(int pin) {
+  int sensorValue = analogRead(pin);
+  return sensorValue;
+}
 
 // Returns the calculated distance of our rangefinder. Uses a moving average filter. 
 float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
@@ -272,8 +276,8 @@ void debugPrintSensors() {
   int total = colorReading.r + colorReading.g + colorReading.b;
   uint8_t rgbProximity = gApds.readProximity();
   uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
-  float distanceLeft = pollRangefinder(cDistPin1);
-  float distanceRight = pollRangefinder(cDistPin2);
+  float distanceLeft = pollRangefinderNoConversion(cDistPin1);
+  float distanceRight = pollRangefinderNoConversion(cDistPin2);
   BlockColor predictedColor = predictColor(colorReading);
 
   Serial2.print("Hall: ");
