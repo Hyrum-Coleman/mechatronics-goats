@@ -1,6 +1,3 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
-
 // Takes a BlockColor enumeration and returns a string that can be printed to the serial monitor. Not used for control flow purposes.
 const char* blockColorToString(BlockColor color) {
   switch (color) {
@@ -13,8 +10,7 @@ const char* blockColorToString(BlockColor color) {
   }
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Predicts the color of a block based on the color reading by comparing it to our calibration values.
 BlockColor predictColor(RGB colorReading) {
@@ -52,8 +48,7 @@ BlockColor predictColor(RGB colorReading) {
   }
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Function to calibrate our color sensor to the three blocks. It's automated/guided.
 void calibrateColorSensor() {
@@ -121,16 +116,14 @@ void calibrateColorSensor() {
   }
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Function to calculate the Euclidean distance between two colors. We use it to compare colors similarity. It is the best way to do this.
 float colorDistance(float color1[3], float color2[3]) {
   return sqrt(pow(color1[0] - color2[0], 2) + pow(color1[1] - color2[1], 2) + pow(color1[2] - color2[2], 2));
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Helper function to check if the sensor is calibrated
 bool isColorSensorCalibrated() {
@@ -143,8 +136,7 @@ bool isColorSensorCalibrated() {
   return true;  // calibrated
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Returns the voltage of the hall effect sensor
 float getCurrentHallVoltage() {
@@ -152,8 +144,7 @@ float getCurrentHallVoltage() {
   return hallVoltage;
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // This function reads the color sensor and stores it in the RGB struct
 // Important to note that the clear channel value is currently being discarded.
@@ -171,8 +162,7 @@ RGB readGlobalColorSensor() {
   return rgb;
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Returns the calculated distance of our rangefinder. 
 float pollRangefinder(int pin) {
@@ -182,8 +172,7 @@ float pollRangefinder(int pin) {
   return distance;
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Returns the calculated distance of our rangefinder. Uses a moving average filter. 
 float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
@@ -207,8 +196,7 @@ float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
   return averageDistance;
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Calibrates the IR array by spinning in a circle while calling the calibrate method of the QTR library (which asks you to move the array over a line)
 void calibrateIrArray(Move nextMove) {
@@ -224,5 +212,3 @@ void calibrateIrArray(Move nextMove) {
   DEBUG_PRINTLN("Done calibrating.");
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 

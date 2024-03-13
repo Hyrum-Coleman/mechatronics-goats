@@ -1,6 +1,3 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
-
 //-----------Macro for debug printing----------
 // Enable or disable debug prints
 #define DEBUG_PRINTS_ENABLED true
@@ -69,14 +66,13 @@ Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
 // For keeping track of previous standby state so we can return to it
 States gLastStandbyState;
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 //-----------------ENTRY POINT-----------------
 int main() {
-  init();  // Initialize board itself
-  Serial.begin(9600); // USB Serial Comms
-  Serial2.begin(9600); // Radio Serial Comms
+  init();               // Initialize board itself
+  Serial.begin(9600);   // USB Serial Comms
+  Serial2.begin(9600);  // Radio Serial Comms
   Serial2.setTimeout(10000);
 
   JsonDocument doc;
@@ -97,9 +93,9 @@ int main() {
   // Start the IR Reciever
   IrReceiver.begin(cIrRecievePin, true);  // true for enable IR feedback
 
-  if (!gApds.begin()) { // if the color sensor didnt start up correctly
+  if (!gApds.begin()) {  // if the color sensor didnt start up correctly
     DEBUG_PRINTLN("Initialization Failed :(");
-  } else { // if the color sensor DID start up correctly
+  } else {  // if the color sensor DID start up correctly
     //enable color sensing mode
     gApds.enableColor(true);
     gApds.enableProximity(true);
@@ -128,13 +124,12 @@ int main() {
     gApds.setADCIntegrationTime(103);  // This integration time (like shutter speed on a camera) got the best results
   }
 
-  setPinModes(); // This is our function to avoid writing pinMode a brazillion times in setup
+  setPinModes();  // This is our function to avoid writing pinMode a brazillion times in setup
 
-  loop(doc); // Since we are using int main(), we need to enter the loop manually
+  loop(doc);  // Since we are using int main(), we need to enter the loop manually
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 void loop(JsonDocument& doc) {
   // For managing sequences of actions
@@ -175,6 +170,3 @@ void loop(JsonDocument& doc) {
   }
   // -----------------------LOOP ENDS--------------------------
 }
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 

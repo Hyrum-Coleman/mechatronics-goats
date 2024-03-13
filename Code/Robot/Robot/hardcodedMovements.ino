@@ -1,6 +1,3 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
-
 // Does the whole reload sequence.
 // At start: robot is near the reloader over the line.
 // At end: robot is near the reloader over the line, but now has a full platform of blocks.
@@ -63,8 +60,7 @@ void executeReload(std::stack<Block>* blocks) {
   gL2Motors.setM1Speed(0);
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Rotates the robot until it is aligned (facing squarely) with a wall.
 void squareUpUsingProx(int speed) {
@@ -93,8 +89,7 @@ void squareUpUsingProx(int speed) {
   
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Centers the robot over the IR array.
 void centerOnIrArray(int speed) {
@@ -123,8 +118,7 @@ void centerOnIrArray(int speed) {
   gMecanumMotors.setSpeeds(0, 0, 0, 0);
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 // Makes the robot physically push the button. It first drives forward to the correct distance for begging to push the button.
 void pushButton(int speed) {
@@ -167,5 +161,3 @@ void pushButton(int speed) {
   gMecanumMotors.setSpeeds(0, 0, 0, 0);
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 

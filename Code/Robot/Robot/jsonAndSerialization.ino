@@ -1,6 +1,3 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
-
 void read_serial(JsonDocument& doc) {
   ReadLoggingStream loggingStream(Serial2, Serial);
   DeserializationError error = deserializeJson(doc, loggingStream);
@@ -13,8 +10,7 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
+
 
 void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
   for (JsonObject obj : doc["g"].as<JsonArray>()) {  // g for go
@@ -50,5 +46,3 @@ void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
   }
 }
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ 
