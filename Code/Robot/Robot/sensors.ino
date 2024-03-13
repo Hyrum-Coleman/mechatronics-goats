@@ -197,14 +197,6 @@ bool isColorSensorCalibrated() {
 
 
 
-// Returns the voltage of the hall effect sensor
-float getCurrentHallVoltage() {
-  float hallVoltage = analogRead(cHallSensorPin);
-  return hallVoltage;
-}
-
-
-
 // This function reads the color sensor and stores it in the RGB struct
 // Important to note that the clear channel value is currently being discarded.
 RGB readGlobalColorSensor() {
@@ -316,7 +308,7 @@ void debugPrintSensors() {
   Serial2.print(" | Color: ");
   Serial2.print(blockColorToString(predictedColor));
 
-  if (hallVoltage > cHallReloadingThreshold) {
+  if (isMagnetDetected()) {
     Serial2.print(" | Magnet: Yes");
   } else {
     Serial2.print(" | Magnet: No");
@@ -327,5 +319,13 @@ void debugPrintSensors() {
   delay(200);
 }
 
+bool isMagnetDetected() {
+  return abs(getCurrentHallVoltage() - cHallReloadingQuiescent) > 50;
+}
 
 
+// Returns the voltage of the hall effect sensor
+float getCurrentHallVoltage() {
+  float hallVoltage = analogRead(cHallSensorPin);
+  return hallVoltage;
+}

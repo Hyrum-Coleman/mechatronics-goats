@@ -259,27 +259,27 @@ void executeReload(std::stack<Block>* blocks) {
   // Drive belt backwards to collect blocks as they enter the belt.
   // In future, make the belt only drive when we need it to. I just dont know the timings yet.
   bool linedUp = false;
-  gL2Motors.setM1Speed(-400);
+  gL2Motors.setM1Speed(400);
   // While our belt is not full of blocks,
   while (blocks->size() < cMaxBlocks) {
     if (!linedUp) {
       DEBUG_PRINTLN("SQUARING UP");
-      squareUpUsingProx(70);
+      //squareUpUsingProx(70);
       delay(500);
 
       DEBUG_PRINTLN("CENTERING");
-      centerOnIrArray(70);
+      //centerOnIrArray(70);
       delay(500);
 
       DEBUG_PRINTLN("SQUARING UP AGAIN");
-      squareUpUsingProx(70);
+      //squareUpUsingProx(70);
 
       linedUp = true;
     }
 
     // Uncomment this when rest of reloading works
     // If the other team has pushed the button, we should wait until its ready to be pushed (using hall effect sensor)
-    if (getCurrentHallVoltage() < cHallReloadingThreshold) {  // check < vs > here
+    if (!isMagnetDetected()) {
       // if the magnet is not detected, the platform is up too high, meaning it is not yet ready for reloading.
       // in that instance, we skip this iteration of the loop and wait until it is detected.
       continue;
@@ -375,8 +375,8 @@ void centerOnIrArray(int speed) {
 
 // Makes the robot physically push the button. It first drives forward to the correct distance for begging to push the button.
 void pushButton(int speed) {
-  const float targetProximityForward = 4;    // target proximity in meters or consistent unit for moving forward
-  const float targetProximityBackward = 10;  // target proximity in meters or consistent unit for reversing
+  const float targetProximityForward = 2;    // target proximity in meters or consistent unit for moving forward
+  const float targetProximityBackward = 7;  // target proximity in meters or consistent unit for reversing
 
   // Drive forward until the proximity sensor reads less than 3 cm
   while (true) {

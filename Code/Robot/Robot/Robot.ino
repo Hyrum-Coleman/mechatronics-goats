@@ -44,7 +44,7 @@ unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
 const unsigned int cProximityThreshold = 10;
-const float cHallReloadingThreshold = 545;
+const float cHallReloadingQuiescent = 512;
 const float cRobotMaxSpeedRadSec = 10000000;
 const int cRobotDriverMaxSpeed = 400;
 // Pins
