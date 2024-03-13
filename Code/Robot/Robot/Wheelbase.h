@@ -37,6 +37,7 @@ public:
   Wheelbase(float lx, float ly, float wheelRadius)
     : Lx(lx), Ly(ly), r(wheelRadius) {}
 
+  // Returns wheel speeds in rads/sec
   void computeWheelSpeeds(float vx, float vy, float omega, float wheelSpeeds[4]) const {
     // Compute the factor (Lx + Ly)
     float factor = Lx + Ly;

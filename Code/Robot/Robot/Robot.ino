@@ -44,7 +44,9 @@ unsigned long gLastRCCommandTime = 0;
 const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
 const unsigned int cProximityThreshold = 10;
-const float cHallReloadingThreshold = 545;  // This needs to be tested by hand.
+const float cHallReloadingThreshold = 545;
+const float cRobotMaxSpeedRadSec = 10000000;
+const int cRobotDriverMaxSpeed = 400;
 // Pins
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
 const int cDistPin2 = A5;  // Right IR rangefinder sensor
