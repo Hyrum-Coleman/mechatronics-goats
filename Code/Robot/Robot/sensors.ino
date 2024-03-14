@@ -235,8 +235,8 @@ double calculateDistanceLeft(int sensorValue, DistanceCalibrationMaterial mat) {
       b = 0; // NOT YET CALIBRATED
       break;
     default:
-      a = -0.73810816;
-      b = 5.55203935;
+      a = -0.6579;
+      b = 5.5182;
       break;
   }
 
@@ -265,8 +265,8 @@ double calculateDistanceRight(int sensorValue, DistanceCalibrationMaterial mat) 
       b = 0; // NOT YET CALIBRATED
       break;
     default:
-      a = -0.6871539;
-      b = 5.5796678;
+      a = -0.6165;
+      b = 5.5499;
       break;
   }
 
@@ -275,16 +275,10 @@ double calculateDistanceRight(int sensorValue, DistanceCalibrationMaterial mat) 
   return distance;
 }
 
-// Returns the calculated distance of our rangefinder.
-float getRangeFinderRawReading(int pin) {
-  int sensorValue = analogRead(pin);
-  return sensorValue;
-}
-
 // The next two functions are pretty similar. I'm still trying to think of a better way.
 // Returns the calculated distance of our rangefinder.
 float getDistFromRangeFinder(int pin, DistanceCalibrationMaterial mat) {
-  int sensorValue = getRangeFinderRawReading(pin);
+  int sensorValue = analogRead(pin);
 
   if (pin == cDistPin1) {
     return calculateDistanceLeft(sensorValue, mat);
@@ -298,7 +292,7 @@ float getDistFromRangeFinder(int pin, DistanceCalibrationMaterial mat) {
 // Returns the calculated distance of our rangefinder. Now uses an IIR filter
 float getDistFromRangeFinderFiltered(int pin, DistanceCalibrationMaterial mat) {
 
-  int sensorValue = getRangeFinderRawReading(pin);
+  int sensorValue = analogRead(pin);
   float distance;
 
   if (pin == cDistPin1) {

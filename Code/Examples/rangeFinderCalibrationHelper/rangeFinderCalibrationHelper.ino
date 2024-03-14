@@ -47,7 +47,7 @@ void loop() {
       displayData();
       prevTime = millis();
     }
-    if (currentAvgDistanceBackwards() >= 6.0) {
+    if (currentAvgDistanceBackwards() >= 5.5) {
       wheels.setSpeeds(0, 0, 0, 0);
       Serial2.println("END DATA");
       done = true;
