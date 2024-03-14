@@ -15,6 +15,7 @@ void setup() {
   Serial2.begin(9600);
   prevCount1 = gEnc1.read();
   prevTime = millis();
+  Serial2.println("Starting single encoder test script");
 }
 
 void loop() {
