@@ -56,7 +56,7 @@ const char* blockColorToString(BlockColor color) {
     case BlockColor::Yellow: return "Yellow";
     case BlockColor::Blue: return "Blue";
     case BlockColor::None: return "None";
-    case BlockColor::UnCalibrated: return "Uncalibrated";
+    case BlockColor::UnCalibrated: return "Unc";
     default: return "Unknown";
   }
 }
@@ -215,6 +215,10 @@ void calibrateIrArray(Move nextMove) {
 
 // Function to calculate distance based on sensor reading for the left sensor
 double calculateDistanceLeft(int sensorValue) {
+  // This catches low noise that blows up our value
+  if (sensorValue < 75) { // min effectiveness of our sensor
+    return 5.5; // Max distance we can see
+  }
   double a = -0.73810816;
   double b = 5.55203935;
   double logSensorValue = log(sensorValue);
@@ -224,6 +228,10 @@ double calculateDistanceLeft(int sensorValue) {
 
 // Function to calculate distance based on sensor reading for the right sensor
 double calculateDistanceRight(int sensorValue) {
+  // This catches low noise that blows up our value
+  if (sensorValue < 75) { // min effectiveness of our sensor
+    return 5.5; // Max distance we can see
+  }
   double a = -0.6871539;
   double b = 5.5796678;
   double logSensorValue = log(sensorValue);
@@ -232,15 +240,15 @@ double calculateDistanceRight(int sensorValue) {
 }
 
 // Returns the calculated distance of our rangefinder. 
-float getRangefinderRawReading(int pin) {
+float getRangeFinderRawReading(int pin) {
   int sensorValue = analogRead(pin);
   return sensorValue;
 }
 
 // The next two functions are pretty similar. I'm still trying to think of a better way.
 // Returns the calculated distance of our rangefinder. 
-double getDistFromRangefinder(int pin) {
-  int sensorValue = getRangefinderRawReading(pin);
+float getDistFromRangeFinder(int pin) {
+  int sensorValue = getRangeFinderRawReading(pin);
 
   if (pin == cDistPin1) {
     return calculateDistanceLeft(sensorValue);
@@ -254,7 +262,7 @@ double getDistFromRangefinder(int pin) {
 // Returns the calculated distance of our rangefinder. Now uses an IIR filter
 float getDistFromRangeFinderFiltered(int pin) {
   
-  int sensorValue = getRangefinderRawReading(pin);
+  int sensorValue = getRangeFinderRawReading(pin);
   float distance;
 
   if (pin == cDistPin1) {
@@ -278,8 +286,8 @@ void debugPrintSensors() {
   int total = colorReading.r + colorReading.g + colorReading.b;
   uint8_t rgbProximity = gApds.readProximity();
   uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
-  float distanceLeft = getDistFromRangefinder(cDistPin1);
-  float distanceRight = getDistFromRangefinder(cDistPin2);
+  float distanceLeft = getDistFromRangeFinder(cDistPin1);
+  float distanceRight = getDistFromRangeFinder(cDistPin2);
   float distanceLeftFiltered = getDistFromRangeFinderFiltered(cDistPin1);
   float distanceRightFiltered = getDistFromRangeFinderFiltered(cDistPin2);
   BlockColor predictedColor = predictColor(colorReading);
@@ -322,16 +330,17 @@ void debugPrintSensors() {
     Serial2.print(" | Magnet: No");
   }
 
-  Serial2.println("");
+  Serial2.print(" | ");
 
   Serial2.print("Hall(IIR): ");
   Serial2.print(hallVoltageFiltered, 2);
 
   Serial2.print(" | Prox IIR (L,R): (");
-  Serial2.print(distanceLeftFiltered, 2);
+  Serial2.print(distanceLeftFiltered, 2); // this appears slow because we aren't polling very fast in this mode!
   Serial2.print(",");
   Serial2.print(distanceRightFiltered, 2);
   Serial2.print(")");
+
   Serial2.println("");
 
   delay(200);
