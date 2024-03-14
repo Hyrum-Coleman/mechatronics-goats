@@ -37,3 +37,14 @@ float encoderCountToTheta(int count) {
   return theta;
 }
 
+/**
+* Converts an encoder count to the corresponding angular displacement of a wheel.
+* 
+* @param theta : angular displacement in rads
+* @return inches : how far the center of the wheel would move assuming rolling without slipping
+*/
+float thetaToInches(float theta) {
+  // x = theta*r
+  float inches = theta * cWheelRadius;
+  return inches;
+}

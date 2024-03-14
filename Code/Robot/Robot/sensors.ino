@@ -213,27 +213,54 @@ RGB readGlobalColorSensor() {
   return rgb;
 }
 
+// Function to calculate distance based on sensor reading for the left sensor
+double calculateDistanceLeft(int sensorValue) {
+  double a = -0.73810816;
+  double b = 5.55203935;
+  double logSensorValue = log(sensorValue);
+  double distance = exp((logSensorValue - b) / a);
+  return distance;
+}
 
-
-// Returns the calculated distance of our rangefinder. 
-float pollRangefinder(int pin) {
-  int sensorValue = analogRead(pin);
-  float voltage = sensorValue * (5.0 / 1023.0);
-  float distance = 33.9 - 69.5 * voltage + 62.3 * pow(voltage, 2) - 25.4 * pow(voltage, 3) + 3.83 * pow(voltage, 4);
+// Function to calculate distance based on sensor reading for the right sensor
+double calculateDistanceRight(int sensorValue) {
+  double a = -0.6871539;
+  double b = 5.5796678;
+  double logSensorValue = log(sensorValue);
+  double distance = exp((logSensorValue - b) / a);
   return distance;
 }
 
 // Returns the calculated distance of our rangefinder. 
-float pollRangefinderNoConversion(int pin) {
+double getDistFromRangefinder(int pin) {
+  int sensorValue = analogRead(pin);
+
+  if (pin == cDistPin1) {
+    return calculateDistanceLeft(sensorValue);
+  }
+  if (pin == cDistPin2) {
+    return calculateDistanceRight(sensorValue);
+  }
+
+}
+
+// Returns the calculated distance of our rangefinder. 
+float getRangefinderRawReading(int pin) {
   int sensorValue = analogRead(pin);
   return sensorValue;
 }
 
 // Returns the calculated distance of our rangefinder. Uses a moving average filter. 
-float pollRangefinderWithSMA(int pin, std::queue<float>& readingsQueue) {
+float getDistFromRangefinderFiltered(int pin, std::queue<float>& readingsQueue) {
   int sensorValue = analogRead(pin);
-  float voltage = sensorValue * (5.0 / 1023.0);
-  float distance = 33.9 - 69.5 * voltage + 62.3 * pow(voltage, 2) - 25.4 * pow(voltage, 3) + 3.83 * pow(voltage, 4);
+  float distance;
+
+  if (pin == cDistPin1) {
+    distance = calculateDistanceLeft(sensorValue);
+  }
+  if (pin == cDistPin2) {
+    distance = calculateDistanceRight(sensorValue);
+  }
 
   // Add new reading to the queue
   if (readingsQueue.size() >= cFilterWindowSize) {
@@ -276,8 +303,8 @@ void debugPrintSensors() {
   int total = colorReading.r + colorReading.g + colorReading.b;
   uint8_t rgbProximity = gApds.readProximity();
   uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
-  float distanceLeft = pollRangefinderNoConversion(cDistPin1);
-  float distanceRight = pollRangefinderNoConversion(cDistPin2);
+  float distanceLeft = getDistFromRangefinder(cDistPin1);
+  float distanceRight = getDistFromRangefinder(cDistPin2);
   BlockColor predictedColor = predictColor(colorReading);
 
   Serial2.print("Hall: ");

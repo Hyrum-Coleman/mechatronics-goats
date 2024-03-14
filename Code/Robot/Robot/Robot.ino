@@ -49,7 +49,7 @@ const float cRobotMaxSpeedRadSec = 10000000;
 const int cRobotDriverMaxSpeed = 400;
 const int cEncoderCountsPerRev = 64;
 const int cWheelMotorGearRatio = 50;
-const float cWheelRadius = 2.559;
+const float cWheelRadius = 1.2795*2; // FIX ME WHEN YOU CAN FIX THE REST OF THE CODE TOO. RADIUS IS 1.2795
 const float cWheelBaseLx = 5.0625;
 const float cWheelBaseLy = 4.386;
 // Pins
