@@ -24,3 +24,16 @@ void radSecToMotorDriverSpeeds(float* radSecWheelSpeeds) {
   }
 
 }
+
+/**
+* Converts an encoder count to the corresponding angular displacement of a wheel.
+* 
+* @param count : encoder count
+* @return theta : wheel displacement in rads
+*/
+float encoderCountToTheta(int count) {
+  // (count * 2pi) / (countsPerRev*gearRatio)
+  float theta = (count * 2 * PI) / (cEncoderCountsPerRev * cWheelMotorGearRatio);
+  return theta;
+}
+

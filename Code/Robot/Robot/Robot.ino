@@ -47,6 +47,11 @@ const unsigned int cProximityThreshold = 10;
 const float cHallReloadingQuiescent = 512;
 const float cRobotMaxSpeedRadSec = 10000000;
 const int cRobotDriverMaxSpeed = 400;
+const int cEncoderCountsPerRev = 64;
+const int cWheelMotorGearRatio = 50;
+const float cWheelRadius = 2.559;
+const float cWheelBaseLx = 5.0625;
+const float cWheelBaseLy = 4.386;
 // Pins
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
 const int cDistPin2 = A5;  // Right IR rangefinder sensor
@@ -66,7 +71,7 @@ float averageBlueReadings[3] = { -1, -1, -1 };
 // Motors
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
-Wheelbase* gWheelbase = new Wheelbase(5.0625, 4.386, 2.559);
+Wheelbase* gWheelbase = new Wheelbase(cWheelBaseLx, cWheelBaseLy, cWheelRadius);
 // For keeping track of previous standby state so we can return to it
 States gLastStandbyState;
 
