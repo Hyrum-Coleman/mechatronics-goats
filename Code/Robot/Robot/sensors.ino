@@ -3,15 +3,11 @@ void addBlockToBelt(std::stack<Block>* blocks, Block blockToAdd) {
   return;
 }
 
-
-
 Block getNextBlock(std::stack<Block>* blocks) {
   Block topBlock = blocks->top();
   blocks->pop();
   return topBlock;
 }
-
-
 
 Block createBlock(RGB rgb) {
   Block newBlock;
@@ -47,15 +43,11 @@ Block createBlock(RGB rgb) {
   return newBlock;
 }
 
-
-
 void addBlockToStackFromRGB(std::stack<Block>* blocks, RGB rgb) {
   Block newBlock = createBlock(rgb);
 
   addBlockToBelt(blocks, newBlock);
 }
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 // Takes a BlockColor enumeration and returns a string that can be printed to the serial monitor. Not used for control flow purposes.
 const char* blockColorToString(BlockColor color) {
@@ -68,8 +60,6 @@ const char* blockColorToString(BlockColor color) {
     default: return "Unknown";
   }
 }
-
-
 
 // Predicts the color of a block based on the color reading by comparing it to our calibration values.
 BlockColor predictColor(RGB colorReading) {
@@ -106,8 +96,6 @@ BlockColor predictColor(RGB colorReading) {
     return BlockColor::Blue;
   }
 }
-
-
 
 // Function to calibrate our color sensor to the three blocks. It's automated/guided.
 void calibrateColorSensor() {
@@ -175,14 +163,10 @@ void calibrateColorSensor() {
   }
 }
 
-
-
 // Function to calculate the Euclidean distance between two colors. We use it to compare colors similarity. It is the best way to do this.
 float colorDistance(float color1[3], float color2[3]) {
   return sqrt(pow(color1[0] - color2[0], 2) + pow(color1[1] - color2[1], 2) + pow(color1[2] - color2[2], 2));
 }
-
-
 
 // Helper function to check if the sensor is calibrated
 bool isColorSensorCalibrated() {
@@ -194,8 +178,6 @@ bool isColorSensorCalibrated() {
   }
   return true;  // calibrated
 }
-
-
 
 // This function reads the color sensor and stores it in the RGB struct
 // Important to note that the clear channel value is currently being discarded.
@@ -212,6 +194,24 @@ RGB readGlobalColorSensor() {
 
   return rgb;
 }
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+// Calibrates the IR array by spinning in a circle while calling the calibrate method of the QTR library (which asks you to move the array over a line)
+void calibrateIrArray(Move nextMove) {
+  // input 'nextMove' is not yet used. In future, it will have associated calibration types. For now, just calibrate everything.
+  // 10s is 400, so 1s is 40
+  int duration = nextMove.params.calibrationParams.duration / 1000;  // convert to s
+  DEBUG_PRINTLN(duration);
+  gMecanumMotors.setSpeeds(200, 200, 200, 200);
+  for (uint16_t i = 0; i < 40 * duration; i++) {
+    gQtr.calibrate();
+  }
+  gMecanumMotors.setSpeeds(0, 0, 0, 0);
+  DEBUG_PRINTLN("Done calibrating.");
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 // Function to calculate distance based on sensor reading for the left sensor
 double calculateDistanceLeft(int sensorValue) {
@@ -232,8 +232,15 @@ double calculateDistanceRight(int sensorValue) {
 }
 
 // Returns the calculated distance of our rangefinder. 
-double getDistFromRangefinder(int pin) {
+float getRangefinderRawReading(int pin) {
   int sensorValue = analogRead(pin);
+  return sensorValue;
+}
+
+// The next two functions are pretty similar. I'm still trying to think of a better way.
+// Returns the calculated distance of our rangefinder. 
+double getDistFromRangefinder(int pin) {
+  int sensorValue = getRangefinderRawReading(pin);
 
   if (pin == cDistPin1) {
     return calculateDistanceLeft(sensorValue);
@@ -241,57 +248,24 @@ double getDistFromRangefinder(int pin) {
   if (pin == cDistPin2) {
     return calculateDistanceRight(sensorValue);
   }
-
+  // else? idk. just dont call it with the wrong pin ig. skill issue if you do.
 }
 
-// Returns the calculated distance of our rangefinder. 
-float getRangefinderRawReading(int pin) {
-  int sensorValue = analogRead(pin);
-  return sensorValue;
-}
-
-// Returns the calculated distance of our rangefinder. Uses a moving average filter. 
-float getDistFromRangefinderFiltered(int pin, std::queue<float>& readingsQueue) {
-  int sensorValue = analogRead(pin);
+// Returns the calculated distance of our rangefinder. Now uses an IIR filter
+float getDistFromRangeFinderFiltered(int pin) {
+  
+  int sensorValue = getRangefinderRawReading(pin);
   float distance;
 
   if (pin == cDistPin1) {
     distance = calculateDistanceLeft(sensorValue);
+    return gDistLeftFilter.process(distance);
   }
   if (pin == cDistPin2) {
     distance = calculateDistanceRight(sensorValue);
+    return gDistRightFilter.process(distance);
   }
-
-  // Add new reading to the queue
-  if (readingsQueue.size() >= cFilterWindowSize) {
-    readingsQueue.pop();  // Remove the oldest reading if we've reached capacity
-  }
-  readingsQueue.push(distance);
-
-  // Calculate the moving average
-  float sum = 0;
-  for (std::queue<float> tempQueue = readingsQueue; !tempQueue.empty(); tempQueue.pop()) {
-    sum += tempQueue.front();
-  }
-  float averageDistance = sum / readingsQueue.size();
-
-  return averageDistance;
-}
-
-
-
-// Calibrates the IR array by spinning in a circle while calling the calibrate method of the QTR library (which asks you to move the array over a line)
-void calibrateIrArray(Move nextMove) {
-  // input 'nextMove' is not yet used. In future, it will have associated calibration types. For now, just calibrate everything.
-  // 10s is 400, so 1s is 40
-  int duration = nextMove.params.calibrationParams.duration / 1000;  // convert to s
-  DEBUG_PRINTLN(duration);
-  gMecanumMotors.setSpeeds(200, 200, 200, 200);
-  for (uint16_t i = 0; i < 40 * duration; i++) {
-    gQtr.calibrate();
-  }
-  gMecanumMotors.setSpeeds(0, 0, 0, 0);
-  DEBUG_PRINTLN("Done calibrating.");
+  // else? idk. just dont call it with the wrong pin ig. skill issue if you do.
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -299,12 +273,15 @@ void calibrateIrArray(Move nextMove) {
 // Prints all of the sensor values at the current time neatly.
 void debugPrintSensors() {
   float hallVoltage = getCurrentHallVoltage();
+  float hallVoltageFiltered = getCurrentHallVoltageFiltered();
   RGB colorReading = readGlobalColorSensor();
   int total = colorReading.r + colorReading.g + colorReading.b;
   uint8_t rgbProximity = gApds.readProximity();
   uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
   float distanceLeft = getDistFromRangefinder(cDistPin1);
   float distanceRight = getDistFromRangefinder(cDistPin2);
+  float distanceLeftFiltered = getDistFromRangeFinderFiltered(cDistPin1);
+  float distanceRightFiltered = getDistFromRangeFinderFiltered(cDistPin2);
   BlockColor predictedColor = predictColor(colorReading);
 
   Serial2.print("Hall: ");
@@ -347,16 +324,30 @@ void debugPrintSensors() {
 
   Serial2.println("");
 
+  Serial2.print("Hall(IIR): ");
+  Serial2.print(hallVoltageFiltered, 2);
+
+  Serial2.print(" | Prox IIR (L,R): (");
+  Serial2.print(distanceLeftFiltered, 2);
+  Serial2.print(",");
+  Serial2.print(distanceRightFiltered, 2);
+  Serial2.print(")");
+  Serial2.println("");
+
   delay(200);
 }
 
 bool isMagnetDetected() {
-  return abs(getCurrentHallVoltage() - cHallReloadingQuiescent) > 50;
+  return abs(getCurrentHallVoltageFiltered() - cHallReloadingQuiescent) > 50;
 }
-
 
 // Returns the voltage of the hall effect sensor
 float getCurrentHallVoltage() {
   float hallVoltage = analogRead(cHallSensorPin);
   return hallVoltage;
+}
+
+float getCurrentHallVoltageFiltered() {
+  float hallVoltage = analogRead(cHallSensorPin);
+  return gHallFilter.process(hallVoltage);
 }

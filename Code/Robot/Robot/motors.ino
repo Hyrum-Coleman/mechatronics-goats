@@ -111,8 +111,8 @@ void executeLineFollow(Move nextMove) {
 
   while (true) {
     // Poll the rangefinders continuously
-    float distanceLeft = getDistFromRangefinderFiltered(cDistPin1, gDistSensor1Readings);
-    float distanceRight = getDistFromRangefinderFiltered(cDistPin2, gDistSensor2Readings);
+    float distanceLeft = getDistFromRangeFinderFiltered(cDistPin1);
+    float distanceRight = getDistFromRangeFinderFiltered(cDistPin2);
 
     // If close enough to the wall, stop
     if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
@@ -349,8 +349,8 @@ void executeReload(std::stack<Block>* blocks) {
 
 // Rotates the robot until it is aligned (facing squarely) with a wall.
 void squareUpUsingProx(int speed) {
-  float distanceLeft = getDistFromRangefinder(cDistPin1);
-  float distanceRight = getDistFromRangefinder(cDistPin1);
+  float distanceLeft = getDistFromRangeFinder(cDistPin1);
+  float distanceRight = getDistFromRangeFinder(cDistPin1);
   float tolerance = 0.05;
 
   // Loop to adjust orientation until the robot is squared with the wall
@@ -365,8 +365,8 @@ void squareUpUsingProx(int speed) {
     delay(100);
 
     // Update distances after adjustment
-    distanceLeft = getDistFromRangefinder(cDistPin1);
-    distanceRight = getDistFromRangefinder(cDistPin1);
+    distanceLeft = getDistFromRangeFinder(cDistPin1);
+    distanceRight = getDistFromRangeFinder(cDistPin1);
   }
 
   // Stop all wheels once squared up with the wall
@@ -412,8 +412,8 @@ void pushButton(int speed) {
 
   // Drive forward until the proximity sensor reads less than 3 cm
   while (true) {
-    float distanceLeft = getDistFromRangefinder(cDistPin1);
-    float distanceRight = getDistFromRangefinder(cDistPin2);
+    float distanceLeft = getDistFromRangeFinder(cDistPin1);
+    float distanceRight = getDistFromRangeFinder(cDistPin2);
     float avgDistance = (distanceLeft + distanceRight) / 2.0;
 
     if (avgDistance < targetProximityForward) {
@@ -431,8 +431,8 @@ void pushButton(int speed) {
 
   // Reverse until the proximity sensor reads less than 7 cm
   while (true) {
-    float distanceLeft = getDistFromRangefinder(cDistPin1);
-    float distanceRight = getDistFromRangefinder(cDistPin2);
+    float distanceLeft = getDistFromRangeFinder(cDistPin1);
+    float distanceRight = getDistFromRangeFinder(cDistPin2);
     float avgDistance = (distanceLeft + distanceRight) / 2.0;
 
     if (avgDistance > targetProximityBackward) {

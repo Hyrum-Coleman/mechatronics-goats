@@ -29,6 +29,7 @@
 // Our custom .h and .cpp files
 #include "Wheelbase.h"
 #include "types.h"
+#include "IIRFilter.h"
 //---------------------------------------------
 
 //---------------Global Variables--------------
@@ -61,8 +62,11 @@ const int cIrRecievePin = 11;
 const int cHallSensorPin = A3;
 // Sensors
 uint16_t gLineSensorValues[cSensorCount];
-std::queue<float> gDistSensor1Readings;
-std::queue<float> gDistSensor2Readings;
+
+IIRFilter gDistLeftFilter(0.1);
+IIRFilter gDistRightFilter(0.1);
+IIRFilter gHallFilter(0.1);
+
 QTRSensors gQtr;
 Adafruit_APDS9960 gApds;
 float averageRedReadings[3] = { -1, -1, -1 };  // Index 0 for red, 1 for green, 2 for blue
