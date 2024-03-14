@@ -3,7 +3,7 @@
 // However, we don't neccesarily scale all the way up to -400,400. We scale up to -maxSpeed,maxSpeed, which is gDriveSpeed in our calls to this function at the moment.
 void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
   for (int i = 0; i < cNumberOfWheels; i++) {
-    wheelSpeeds[i] = map(wheelSpeeds[i], -3.91, 3.91, -1 * maxSpeed, maxSpeed);
+    wheelSpeeds[i] = map(wheelSpeeds[i], -7.82, 7.82, -1 * maxSpeed, maxSpeed);
   }
 }
 
