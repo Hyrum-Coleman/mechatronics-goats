@@ -213,6 +213,8 @@ void calibrateIrArray(Move nextMove) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+// TODO: Consolidate these into fewer functions. 
+
 // Function to calculate distance based on sensor reading for the left sensor
 double calculateDistanceLeft(int sensorValue, DistanceCalibrationMaterial mat) {
   // This catches low noise that blows up our value
