@@ -56,6 +56,20 @@ enum BlockColor {
   UnCalibrated,
 };
 
+enum DistanceCalibrationMaterial {
+  Button,
+  Chassis,
+  Cardboard,
+};
+
+enum TerminationType {
+  LineCovered,
+  LineCentered,
+  AverageDistanceAway,
+  DistanceTraveled,
+  TimeExpired,
+};
+
 struct Velocities {
   float xDot;
   float yDot;
@@ -70,14 +84,6 @@ struct RGB {
   uint16_t r;
   uint16_t g;
   uint16_t b;
-};
-
-enum TerminationType {
-  LineCovered,
-  LineCentered,
-  AverageDistanceAway,
-  DistanceTraveled,
-  TimeExpired,
 };
 
 struct DrivingTerminationCondition {

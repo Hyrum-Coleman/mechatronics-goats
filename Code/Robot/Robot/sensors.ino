@@ -214,63 +214,97 @@ void calibrateIrArray(Move nextMove) {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 // Function to calculate distance based on sensor reading for the left sensor
-double calculateDistanceLeft(int sensorValue) {
+double calculateDistanceLeft(int sensorValue, DistanceCalibrationMaterial mat) {
   // This catches low noise that blows up our value
-  if (sensorValue < 75) { // min effectiveness of our sensor
-    return 5.5; // Max distance we can see
+  if (sensorValue < 75) {  // min effectiveness of our sensor
+    return 5.5;            // Max distance we can see
   }
-  double a = -0.73810816;
-  double b = 5.55203935;
+
+  double a;
+  double b;
+
+  switch (mat) {
+    case DistanceCalibrationMaterial::Button:
+      a = 0; // NOT YET CALIBRATED
+      b = 0; // NOT YET CALIBRATED
+      break;
+    case DistanceCalibrationMaterial::Chassis:
+      a = 0; // NOT YET CALIBRATED
+      b = 0; // NOT YET CALIBRATED
+      break;
+    default:
+      a = -0.73810816;
+      b = 5.55203935;
+      break;
+  }
+
   double logSensorValue = log(sensorValue);
   double distance = exp((logSensorValue - b) / a);
   return distance;
 }
 
 // Function to calculate distance based on sensor reading for the right sensor
-double calculateDistanceRight(int sensorValue) {
+double calculateDistanceRight(int sensorValue, DistanceCalibrationMaterial mat) {
   // This catches low noise that blows up our value
-  if (sensorValue < 75) { // min effectiveness of our sensor
-    return 5.5; // Max distance we can see
+  if (sensorValue < 75) {  // min effectiveness of our sensor
+    return 5.5;            // Max distance we can see
   }
-  double a = -0.6871539;
-  double b = 5.5796678;
+
+  double a;
+  double b;
+
+  switch (mat) {
+    case DistanceCalibrationMaterial::Button:
+      a = 0; // NOT YET CALIBRATED
+      b = 0; // NOT YET CALIBRATED
+      break;
+    case DistanceCalibrationMaterial::Chassis:
+      a = 0; // NOT YET CALIBRATED
+      b = 0; // NOT YET CALIBRATED
+      break;
+    default:
+      a = -0.6871539;
+      b = 5.5796678;
+      break;
+  }
+
   double logSensorValue = log(sensorValue);
   double distance = exp((logSensorValue - b) / a);
   return distance;
 }
 
-// Returns the calculated distance of our rangefinder. 
+// Returns the calculated distance of our rangefinder.
 float getRangeFinderRawReading(int pin) {
   int sensorValue = analogRead(pin);
   return sensorValue;
 }
 
 // The next two functions are pretty similar. I'm still trying to think of a better way.
-// Returns the calculated distance of our rangefinder. 
-float getDistFromRangeFinder(int pin) {
+// Returns the calculated distance of our rangefinder.
+float getDistFromRangeFinder(int pin, DistanceCalibrationMaterial mat) {
   int sensorValue = getRangeFinderRawReading(pin);
 
   if (pin == cDistPin1) {
-    return calculateDistanceLeft(sensorValue);
+    return calculateDistanceLeft(sensorValue, mat);
   }
   if (pin == cDistPin2) {
-    return calculateDistanceRight(sensorValue);
+    return calculateDistanceRight(sensorValue, mat);
   }
   // else? idk. just dont call it with the wrong pin ig. skill issue if you do.
 }
 
 // Returns the calculated distance of our rangefinder. Now uses an IIR filter
-float getDistFromRangeFinderFiltered(int pin) {
-  
+float getDistFromRangeFinderFiltered(int pin, DistanceCalibrationMaterial mat) {
+
   int sensorValue = getRangeFinderRawReading(pin);
   float distance;
 
   if (pin == cDistPin1) {
-    distance = calculateDistanceLeft(sensorValue);
+    distance = calculateDistanceLeft(sensorValue, mat);
     return gDistLeftFilter.process(distance);
   }
   if (pin == cDistPin2) {
-    distance = calculateDistanceRight(sensorValue);
+    distance = calculateDistanceRight(sensorValue, mat);
     return gDistRightFilter.process(distance);
   }
   // else? idk. just dont call it with the wrong pin ig. skill issue if you do.
@@ -286,10 +320,10 @@ void debugPrintSensors() {
   int total = colorReading.r + colorReading.g + colorReading.b;
   uint8_t rgbProximity = gApds.readProximity();
   uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
-  float distanceLeft = getDistFromRangeFinder(cDistPin1);
-  float distanceRight = getDistFromRangeFinder(cDistPin2);
-  float distanceLeftFiltered = getDistFromRangeFinderFiltered(cDistPin1);
-  float distanceRightFiltered = getDistFromRangeFinderFiltered(cDistPin2);
+  float distanceLeft = getDistFromRangeFinder(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+  float distanceRight = getDistFromRangeFinder(cDistPin2, DistanceCalibrationMaterial::Cardboard);
+  float distanceLeftFiltered = getDistFromRangeFinderFiltered(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+  float distanceRightFiltered = getDistFromRangeFinderFiltered(cDistPin2, DistanceCalibrationMaterial::Cardboard);
   BlockColor predictedColor = predictColor(colorReading);
 
   Serial2.print("Hall: ");
@@ -336,7 +370,7 @@ void debugPrintSensors() {
   Serial2.print(hallVoltageFiltered, 2);
 
   Serial2.print(" | Prox IIR (L,R): (");
-  Serial2.print(distanceLeftFiltered, 2); // this appears slow because we aren't polling very fast in this mode!
+  Serial2.print(distanceLeftFiltered, 2);  // this appears slow because we aren't polling very fast in this mode!
   Serial2.print(",");
   Serial2.print(distanceRightFiltered, 2);
   Serial2.print(")");
