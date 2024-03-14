@@ -33,9 +33,9 @@ void loop() {
 
 void displayEncoderSpeeds() {
   // Read current counts for each encoder
-  int32_t currCount1 = gEnc1.read();
+  int32_t currCount1 = -gEnc1.read();
   int32_t currCount2 = gEnc2.read();
-  int32_t currCount3 = gEnc3.read();
+  int32_t currCount3 = -gEnc3.read();
   int32_t currCount4 = gEnc4.read();
 
   unsigned long currTime = millis();
