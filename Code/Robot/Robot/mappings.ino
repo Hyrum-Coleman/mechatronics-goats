@@ -18,6 +18,24 @@ void radSecToMotorDriverSpeeds(float* radSecWheelSpeeds) {
   // max speed of our robot is _____ rad/s or _____ in/s
   // those two scales need to be correlated, and if a requested speed is greater than the max possible speed, it should be cropped
 
+  // Find the maximum speed in the array to see if we need to scale down
+  float maxSpeed = 0;
+  for (int i = 0; i < cNumberOfWheels; i++) {
+    if (abs(radSecWheelSpeeds[i]) > maxSpeed) {
+      maxSpeed = abs(radSecWheelSpeeds[i]);
+    }
+  }
+
+  // Scale down all speeds proportionally if any wheel speed exceeds the max speed in rad/s.
+  // This allows us to preserve control information without just clipping to 400 on all wheels.
+  if (maxSpeed > cRobotMaxSpeedRadSec) {
+    float ratio = maxSpeed / cRobotMaxSpeedRadSec;
+    for (int i = 0; i < cNumberOfWheels; i++) {
+      radSecWheelSpeeds[i] /= ratio;
+    }
+  }
+
+  // Finally, map to our motor drivers scale. Contstrain may be uneccesary now.
   for (int i = 0; i < cNumberOfWheels; i++) {
     radSecWheelSpeeds[i] = map(radSecWheelSpeeds[i], -cRobotMaxSpeedRadSec, cRobotMaxSpeedRadSec, -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
     radSecWheelSpeeds[i] = constrain(radSecWheelSpeeds[i], -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);

@@ -26,58 +26,75 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
   }
 }
 
-void executeDriveToGoalPose(Pose goalPose, float driveTime) {
-  Velocities ikVelocities;
+void labStylePositionControl(Pose goalPose, float driveTime) {
+  Velocities fwdVelocities;
+  Pose nextPose;
   float thresh = 1.0;
+  float thresh_th = 0.2;
+  float Kp = 1.0;
   // Array to store calculated errors
-  float errorSpeeds[cNumberOfWheels];
+  float wheelSpeedsDes[cNumberOfWheels];
   // Array to store measured wheel speeds
   float odomWheelSpeeds[cNumberOfWheels];
   // Array to store control signals for the wheels
   float controlSignals[cNumberOfWheels];
 
-  // Calculate initial error to enter loop
-  float err_x = goalPose.x - gRobotPose.x;
-  float err_y =  goalPose.y - gRobotPose.y;
-  float err_th = goalPose.theta - gRobotPose.theta;
+  // These are analagous to omega_des in the lab9 code
+  float vx_des = (goalPose.x - gRobotPose.x) / driveTime;
+  float vy_des = (goalPose.y - gRobotPose.y) / driveTime;
+  float vth_des = (goalPose.theta - gRobotPose.theta) / driveTime; 
 
-  while (err_x > thresh || err_y > thresh || err_th > thresh) {
-    // Find error between present pose and goal pose
-    // Intuit: if the goal x position is 10 and our x position is 0, error is 10, and we should drive to the right (positive)
-    err_x = goalPose.x - gRobotPose.x;
-    err_y =  goalPose.y - gRobotPose.y;
-    err_th = goalPose.theta - gRobotPose.theta;
+  double tOld = micros() / 1000000.;
+  double t, deltaT;
 
-    // Transform error to the coordinate system of our robot
-    gWheelbase->computeWheelSpeeds(err_x/driveTime, err_y/driveTime, err_th/driveTime, errorSpeeds);
-    // errorSpeeds is now in rad/s and functions as the error for our PID controller.
+  float err_x, err_y, err_th;
+  float u_x, u_y, u_th;
+
+  do {
+    t = micros() / 1000000.;
+    deltaT = t - tOld;
+
+    nextPose.x += vx_des * deltaT;
+    nextPose.y += vy_des * deltaT;
+    nextPose.theta += vth_des * deltaT;
+
+    // generate errors between present pose and next pose
+    err_x = nextPose.x - gRobotPose.x;
+    err_y = nextPose.y - gRobotPose.y;
+    err_th = nextPose.theta - gRobotPose.theta;
+
+    // PID will go here. These are the 'control signals' before transforming to robot coordinates and mapping to correct units.
+    u_x = Kp * err_x;
+    u_y = Kp * err_y;
+    u_th = Kp * err_th;
+
+    // Transform control signals to robot coordinates
+    gWheelbase->computeWheelSpeeds(u_x, u_y, u_th, controlSignals);
     // Account for the polarity of our motors.
-    errorSpeeds[1] *= -1;
-    errorSpeeds[3] *= -1;
+    controlSignals[1] *= -1; //( [] [-] [] [-] )
+    controlSignals[3] *= -1;
 
-    // Pipe error speeds through PID algorithm to generate control signals
-    for (int i = 0; i < cNumberOfWheels; i++) {
-      // for now, just directly use the error speeds. IE, P controller with Kp = 1.
-      controlSignals[i] = errorSpeeds[i]; //gPid.step(millis(), errorSpeeds[i]);
-    }
-
-    // Now that we have generated a desired speed based on our error, set the motors to it
-    // Before calling setSpeeds, we map to -400,400
+    // Convert control signals from rad/sec to motor driver units
     radSecToMotorDriverSpeeds(controlSignals);
+
+    // Set the speeds to the control signals
     gMecanumMotors.setSpeeds(controlSignals[0], controlSignals[1], controlSignals[2], controlSignals[3]);
 
-    // Finally, update current pose
     // Get current wheel speeds from encoders
     odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec(); // flip is taken care of in the wheel manager
     odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
-    // Calculate current velocity based on wheel speeds and fwd kinematics
-    gWheelbase->computeVelocities(odomWheelSpeeds, ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
-    // Update pose based on velocities
-    gRobotPose.update_pos(ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
-  }
 
+    // Calculate current velocity based on wheel speeds and fwd kinematics
+    // modifies fwdVelocities in place
+    gWheelbase->computeVelocities(odomWheelSpeeds, fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+    // Update pose based on updated velocities
+    gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+    tOld = t;
+  } while (abs(err_x) > thresh || abs(err_y) > thresh || abs(err_th) > thresh_th); // need different thresh for theta beacuse rads
 }
 
 // Experimental function that controls our robot with desired velocities until a condition is met.
