@@ -213,7 +213,7 @@ void calibrateIrArray(Move nextMove) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-// TODO: Consolidate these into fewer functions. 
+// TODO: Consolidate these into fewer functions.
 
 // Function to calculate distance based on sensor reading for the left sensor
 double calculateDistanceLeft(int sensorValue, DistanceCalibrationMaterial mat) {
@@ -227,12 +227,12 @@ double calculateDistanceLeft(int sensorValue, DistanceCalibrationMaterial mat) {
 
   switch (mat) {
     case DistanceCalibrationMaterial::Button:
-      a = 0; // NOT YET CALIBRATED
-      b = 0; // NOT YET CALIBRATED
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
       break;
     case DistanceCalibrationMaterial::Chassis:
-      a = 0; // NOT YET CALIBRATED
-      b = 0; // NOT YET CALIBRATED
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
       break;
     default:
       a = -0.6579;
@@ -257,12 +257,12 @@ double calculateDistanceRight(int sensorValue, DistanceCalibrationMaterial mat) 
 
   switch (mat) {
     case DistanceCalibrationMaterial::Button:
-      a = 0; // NOT YET CALIBRATED
-      b = 0; // NOT YET CALIBRATED
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
       break;
     case DistanceCalibrationMaterial::Chassis:
-      a = 0; // NOT YET CALIBRATED
-      b = 0; // NOT YET CALIBRATED
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
       break;
     default:
       a = -0.6165;
@@ -375,6 +375,8 @@ void debugPrintSensors() {
 
   delay(200);
 }
+
+
 
 bool isMagnetDetected() {
   return abs(getCurrentHallVoltageFiltered() - cHallReloadingQuiescent) > 50;

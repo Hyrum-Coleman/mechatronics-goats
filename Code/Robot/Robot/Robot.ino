@@ -74,9 +74,9 @@ float averageRedReadings[3] = { -1, -1, -1 };  // Index 0 for red, 1 for green, 
 float averageYellowReadings[3] = { -1, -1, -1 };
 float averageBlueReadings[3] = { -1, -1, -1 };
 //Encoders
-EncoderManager gWheel1Manager(18, 22, cEncoderCountsPerRev, cWheelMotorGearRatio);
+EncoderManager gWheel1Manager(18, 22, cEncoderCountsPerRev, cWheelMotorGearRatio, true); // flip m1 so fwd = plus counts
 EncoderManager gWheel2Manager(3, 24, cEncoderCountsPerRev, cWheelMotorGearRatio);
-EncoderManager gWheel3Manager(2, 26, cEncoderCountsPerRev, cWheelMotorGearRatio);
+EncoderManager gWheel3Manager(2, 26, cEncoderCountsPerRev, cWheelMotorGearRatio, true); // flip m3 so fwd = plus counts
 EncoderManager gWheel4Manager(19, 28, cEncoderCountsPerRev, cWheelMotorGearRatio);
 
 // Motors
