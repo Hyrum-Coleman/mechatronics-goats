@@ -26,48 +26,112 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
   }
 }
 
+void executeDriveToGoalPose(Pose goalPose, float driveTime) {
+  Velocities ikVelocities;
+  float thresh = 1.0;
+  // Array to store calculated errors
+  float errorSpeeds[cNumberOfWheels];
+  // Array to store measured wheel speeds
+  float odomWheelSpeeds[cNumberOfWheels];
+  // Array to store control signals for the wheels
+  float controlSignals[cNumberOfWheels];
+
+  // Calculate initial error to enter loop
+  float err_x = goalPose.x - gRobotPose.x;
+  float err_y =  goalPose.y - gRobotPose.y;
+  float err_th = goalPose.theta - gRobotPose.theta;
+
+  while (err_x > thresh || err_y > thresh || err_th > thresh) {
+    // Find error between present pose and goal pose
+    // Intuit: if the goal x position is 10 and our x position is 0, error is 10, and we should drive to the right (positive)
+    err_x = goalPose.x - gRobotPose.x;
+    err_y =  goalPose.y - gRobotPose.y;
+    err_th = goalPose.theta - gRobotPose.theta;
+
+    // Transform error to the coordinate system of our robot
+    gWheelbase->computeWheelSpeeds(err_x/driveTime, err_y/driveTime, err_th/driveTime, errorSpeeds);
+    // errorSpeeds is now in rad/s and functions as the error for our PID controller.
+    // Account for the polarity of our motors.
+    errorSpeeds[1] *= -1;
+    errorSpeeds[3] *= -1;
+
+    // Pipe error speeds through PID algorithm to generate control signals
+    for (int i = 0; i < cNumberOfWheels; i++) {
+      // for now, just directly use the error speeds. IE, P controller with Kp = 1.
+      controlSignals[i] = errorSpeeds[i]; //gPid.step(millis(), errorSpeeds[i]);
+    }
+
+    // Now that we have generated a desired speed based on our error, set the motors to it
+    // Before calling setSpeeds, we map to -400,400
+    radSecToMotorDriverSpeeds(controlSignals);
+    gMecanumMotors.setSpeeds(controlSignals[0], controlSignals[1], controlSignals[2], controlSignals[3]);
+
+    // Finally, update current pose
+    // Get current wheel speeds from encoders
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec(); // flip is taken care of in the wheel manager
+    odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
+    // Calculate current velocity based on wheel speeds and fwd kinematics
+    gWheelbase->computeVelocities(odomWheelSpeeds, ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
+    // Update pose based on velocities
+    gRobotPose.update_pos(ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
+  }
+
+}
+
+// Experimental function that controls our robot with desired velocities until a condition is met.
 void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCondition term) {
-  // Array to store calculated wheel speeds
+  // Array to store wheel speeds calculated based on desired velocities
   float wheelSpeeds[cNumberOfWheels];
   // Array to store odometry speeds (for use in while loop)
   float odomWheelSpeeds[cNumberOfWheels];
+  // Array for our command signals. This is the result of our PID algorithm.
+  float controlSignals[cNumberOfWheels];
   // To store our velocities that the inverse kinematics mutates
   Velocities ikVelocities;
 
   // Calculate required wheel speeds to achieve desired velocities
   gWheelbase->computeWheelSpeeds(v.xDot , v.yDot, v.thetaDot, wheelSpeeds);
+  // now take the integral of this to get position?
   
-  // Wheelspeeds now contains goal rad/sec values for each wheel. Needs to be in motors values
-  radSecToMotorDriverSpeeds(wheelSpeeds); // maps and constrains from -400 to 400 for motor drivers
-  // Wheelspeeds is now in motor driver units. 
+  // Wheelspeeds now contains goal rad/sec values for each wheel.
   // Account for the polarity of our motors.
   wheelSpeeds[1] *= -1;
   wheelSpeeds[3] *= -1;
   // We now want to command the motors to those speeds. 
   // More specifically, we want to ramp smoothly up to the goal speeds while numerically integrating our position until we reach the termination condition.
-  while (!term.tripped) {
-    // First, update position.
-    // In future, refactor this to be a single class that has a method to take in entire array and update it in place.
+  // Initialize the ramp with 1 second ramp up time.
+  // It will ramp up our speeds based on the current time and the ramp time. 
+  // If our current time exceeds the ramp time, the original goal will be returned.
+  MotorRamp ramp(wheelSpeeds, 1000);
+  while (!term.tripped) { // while the condition has not been met
+    // Update odometry
+    // Todo: make wheelmanager manage all 4 wheels (take in an int to choose which wheel)
     odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec(); // flip is taken care of in the wheel manager
     odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
 
     // Uses measured wheel speeds to calculate robot velocity with forward kinematics. Mutates ikVelocities in place.
-    gWheelbase->computeVelocities(odomWheelSpeeds, ikVelocities.x, ikVelocities.y, ikVelocities.thetaDot)
+    gWheelbase->computeVelocities(odomWheelSpeeds, ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
 
     // Automatically updates predicted position using the ik velocities
-    gPose.update_pos(ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
+    gRobotPose.update_pos(ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
 
-    // Using PID, ramp into the speeds
-    // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-    gMecanumMotors.setSpeeds(wheelSpeeds[0], wheelSpeeds[1], wheelSpeeds[2], wheelSpeeds[3]);
+    // Map controlSignals to our ramp function. Internally based on time and the goal speeds set when instantiating MotorRamp.
+    ramp.setControlSignals(controlSignals); // mutates controlsignals
+
+    // Before calling setSpeeds, we map to -400, 400
+    radSecToMotorDriverSpeeds(controlSignals);
+    // Now we finally set the speeds after calculating them in rad/s with IK and ramping them.
+    gMecanumMotors.setSpeeds(controlSignals[0], controlSignals[1], controlSignals[2], controlSignals[3]);
 
     // Call function that checks the condition based on the condition type. It takes in term.
     // Inside that function, the termination condition gets tripped if the condition is met. This breaks the loop and we are done.
     switch (term.type) {
       case TerminationType::LineCovered:
-        isLineCovered(term);
+        // function that takes in term and switches it if the condition is met
         break;
       case TerminationType::LineCentered:
         break;

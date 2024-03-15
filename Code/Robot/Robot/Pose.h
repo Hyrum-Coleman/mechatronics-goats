@@ -5,10 +5,12 @@
 
 class Pose {
 private:
-  float x, y, theta;
   unsigned long lastUpdateTime;
 
 public:
+  // Properties
+  float x, y, theta;
+
   // constructor
   Pose(float initX = 0.0, float initY = 0.0, float initTheta = 0.0)
       : x(initX), y(initY), theta(initTheta), lastUpdateTime(millis()) {}
@@ -23,11 +25,6 @@ public:
 
     lastUpdateTime = currentTime; // Update the last update time
   }
-
-  // Getters
-  float get_x() const { return x; }
-  float get_y() const { return y; }
-  float get_theta() const { return theta; }
 
   // 'setter'
   void reset_pose(float newX = 0.0, float newY = 0.0, float newTheta = 0.0) {

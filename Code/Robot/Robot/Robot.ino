@@ -32,6 +32,7 @@
 #include "IIRFilter.h"
 #include "EncoderManager.h"
 #include "Pose.h"
+#include "MotorRamp.h"
 //---------------------------------------------
 
 //---------------Global Variables--------------
@@ -74,13 +75,14 @@ Adafruit_APDS9960 gApds;
 float averageRedReadings[3] = { -1, -1, -1 };  // Index 0 for red, 1 for green, 2 for blue
 float averageYellowReadings[3] = { -1, -1, -1 };
 float averageBlueReadings[3] = { -1, -1, -1 };
-//Encoders and pose
+// Encoders pose and PID
 EncoderManager gWheel1Manager(18, 22, cEncoderCountsPerRev, cWheelMotorGearRatio, true); // flip m1 so fwd = plus counts
 EncoderManager gWheel2Manager(3, 24, cEncoderCountsPerRev, cWheelMotorGearRatio);
 EncoderManager gWheel3Manager(2, 26, cEncoderCountsPerRev, cWheelMotorGearRatio, true); // flip m3 so fwd = plus counts
 EncoderManager gWheel4Manager(19, 28, cEncoderCountsPerRev, cWheelMotorGearRatio);
 
-Pose gPose();
+Pose gRobotPose;
+PID gPid(0.5, 1, 1);
 
 // Motors
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
