@@ -3,7 +3,7 @@
 // However, we don't neccesarily scale all the way up to -400,400. We scale up to -maxSpeed,maxSpeed, which is gDriveSpeed in our calls to this function at the moment.
 void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
   for (int i = 0; i < cNumberOfWheels; i++) {
-    wheelSpeeds[i] = map(wheelSpeeds[i], -7.82, 7.82, -1 * maxSpeed, maxSpeed);
+    wheelSpeeds[i] = mapf(wheelSpeeds[i], -7.82, 7.82, -1 * maxSpeed, maxSpeed);
   }
 }
 
@@ -37,7 +37,7 @@ void radSecToMotorDriverSpeeds(float* radSecWheelSpeeds) {
 
   // Finally, map to our motor drivers scale. Contstrain may be uneccesary now.
   for (int i = 0; i < cNumberOfWheels; i++) {
-    radSecWheelSpeeds[i] = map(radSecWheelSpeeds[i], -cRobotMaxSpeedRadSec, cRobotMaxSpeedRadSec, -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
+    radSecWheelSpeeds[i] = mapf(radSecWheelSpeeds[i], -cRobotMaxSpeedRadSec, cRobotMaxSpeedRadSec, -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
     radSecWheelSpeeds[i] = constrain(radSecWheelSpeeds[i], -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
   }
 
@@ -65,4 +65,10 @@ float thetaToInches(float theta) {
   // x = theta*r
   float inches = theta * cWheelRadius;
   return inches;
+}
+
+// Like map but for floats. I can't belive its been rounding this whole time.
+long mapf(float x, float in_min, float in_max, float out_min, float out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
