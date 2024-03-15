@@ -27,10 +27,16 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
 }
 
 void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCondition term) {
-  // Array to store wheel speeds
+  // Array to store calculated wheel speeds
   float wheelSpeeds[cNumberOfWheels];
+  // Array to store odometry speeds (for use in while loop)
+  float odomWheelSpeeds[cNumberOfWheels];
+  // To store our velocities that the inverse kinematics mutates
+  Velocities ikVelocities;
+
   // Calculate required wheel speeds to achieve desired velocities
   gWheelbase->computeWheelSpeeds(v.xDot , v.yDot, v.thetaDot, wheelSpeeds);
+  
   // Wheelspeeds now contains goal rad/sec values for each wheel. Needs to be in motors values
   radSecToMotorDriverSpeeds(wheelSpeeds); // maps and constrains from -400 to 400 for motor drivers
   // Wheelspeeds is now in motor driver units. 
@@ -40,16 +46,36 @@ void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCond
   // We now want to command the motors to those speeds. 
   // More specifically, we want to ramp smoothly up to the goal speeds while numerically integrating our position until we reach the termination condition.
   while (!term.tripped) {
+    // First, update position.
+    // In future, refactor this to be a single class that has a method to take in entire array and update it in place.
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec(); // flip is taken care of in the wheel manager
+    odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
+
+    // Uses measured wheel speeds to calculate robot velocity with forward kinematics. Mutates ikVelocities in place.
+    gWheelbase->computeVelocities(odomWheelSpeeds, ikVelocities.x, ikVelocities.y, ikVelocities.thetaDot)
+
+    // Automatically updates predicted position using the ik velocities
+    gPose.update_pos(ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
+
+    // Using PID, ramp into the speeds
+    // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+    gMecanumMotors.setSpeeds(wheelSpeeds[0], wheelSpeeds[1], wheelSpeeds[2], wheelSpeeds[3]);
+
     // Call function that checks the condition based on the condition type. It takes in term.
     // Inside that function, the termination condition gets tripped if the condition is met. This breaks the loop and we are done.
     switch (term.type) {
       case TerminationType::LineCovered:
+        isLineCovered(term);
         break;
       case TerminationType::LineCentered:
         break;
-      case TerminationType::AverageDistanceAway:
+      case TerminationType::AverageRangeFinderDistance:
         break;
       case TerminationType::DistanceTraveled:
+        break;
+      case TerminationType::AngleReached:
         break;
       case TerminationType::TimeExpired:
         break;

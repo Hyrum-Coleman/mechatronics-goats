@@ -1,8 +1,8 @@
 #ifndef EncoderManager_h
 #define EncoderManager_h
 
-#include <Encoder.h>
 #include <Arduino.h>
+#include <Encoder.h>
 
 class EncoderManager {
 private:
@@ -14,7 +14,10 @@ private:
   bool flipped;
 
 public:
-  EncoderManager(uint8_t pin1, uint8_t pin2, float cpr, float gr, bool flip = false) : enc(pin1, pin2), prevCount(0), prevTime(0), countsPerRev(cpr), gearRatio(gr), flipped(flip) {}
+  EncoderManager(uint8_t pin1, uint8_t pin2, float cpr, float gr,
+                 bool flip = false)
+      : enc(pin1, pin2), prevCount(0), prevTime(0), countsPerRev(cpr),
+        gearRatio(gr), flipped(flip) {}
   // Initializes.
   void begin() {
     prevCount = enc.read();
@@ -29,30 +32,34 @@ public:
 
   // Returns the wheel's speed in Counts Per Second (CPS)
   float getWheelSpeedCPS() {
-    long currentCount = enc.read();        // Read current encoder count
-    if(flipped) currentCount = -currentCount;
-    unsigned long currentTime = millis();  // Get current time
-    float speed = 0.0;                     // Initialize speed
+    long currentCount = enc.read(); // Read current encoder count
+    if (flipped)
+      currentCount = -currentCount;
+    unsigned long currentTime = millis(); // Get current time
+    float speed = 0.0;                    // Initialize speed
 
     // Check for div/0
     if (currentTime != prevTime) {
-      speed = (currentCount - prevCount) / ((currentTime - prevTime) / 1000.0);  // Calculate speed in CPS
+      speed = (currentCount - prevCount) /
+              ((currentTime - prevTime) / 1000.0); // Calculate speed in CPS
     }
 
     // Update previous count and time for next calculation
     prevCount = currentCount;
     prevTime = currentTime;
 
-    return speed;  // Return calculated speed
+    return speed; // Return calculated speed
   }
 
   // Returns the wheel's speed in Radians Per Second (Rad/s)
   float getWheelSpeedRadPerSec() {
-    long currentCount = enc.read();                       // Read current encoder count
-    if(flipped) currentCount = -currentCount;
-    unsigned long currentTime = millis();                 // Get current time
-    float deltaCount = currentCount - prevCount;          // Calculate change in count
-    float deltaTime = (currentTime - prevTime) / 1000.0;  // Calculate elapsed time in seconds
+    long currentCount = enc.read(); // Read current encoder count
+    if (flipped)
+      currentCount = -currentCount;
+    unsigned long currentTime = millis();        // Get current time
+    float deltaCount = currentCount - prevCount; // Calculate change in count
+    float deltaTime =
+        (currentTime - prevTime) / 1000.0; // Calculate elapsed time in seconds
 
     // Calculate angle in radians covered since last measurement
     float theta = (deltaCount * 2 * PI) / (countsPerRev * gearRatio);
@@ -64,7 +71,7 @@ public:
     prevCount = currentCount;
     prevTime = currentTime;
 
-    return speedRadPerSec;  // Return calculated speed
+    return speedRadPerSec; // Return calculated speed
   }
 };
 

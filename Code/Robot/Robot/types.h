@@ -65,9 +65,10 @@ enum DistanceCalibrationMaterial {
 enum TerminationType {
   LineCovered,
   LineCentered,
-  AverageDistanceAway,
+  AverageRangeFinderDistance,
   DistanceTraveled,
   TimeExpired,
+  AngleReached,
 };
 
 struct Velocities {
