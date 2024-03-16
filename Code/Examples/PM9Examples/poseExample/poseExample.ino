@@ -32,7 +32,7 @@ const float cWheelBaseLy = 4.386;
 Wheelbase* gWheelbase = new Wheelbase(cWheelBaseLx, cWheelBaseLy, cWheelRadius);
 
 void setup() {
-  Serial.begin(9600);
+  Serial2.begin(9600);
   wheels.init();
   wheels.enableDrivers();
   gWheel1Manager.begin();
@@ -44,30 +44,35 @@ void setup() {
 
 
 void loop() {
-  // Read and print the wheel speed every second
-  delay(200); // Wait for 1 second
-  
   odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();
   odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
   odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
   odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
 
+  //Serial2.print("Odom: ");
+  //Serial2.print(odomWheelSpeeds[0]);
+  //Serial2.print(" | ");
+  //Serial2.print(odomWheelSpeeds[1]);
+  //Serial2.print(" | ");
+  //Serial2.print(odomWheelSpeeds[2]);
+  //Serial2.print(" | ");
+  //Serial2.println(odomWheelSpeeds[3]);
+
   gWheelbase->computeVelocities(odomWheelSpeeds, fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
 
-  Serial.print("xDot: ");
-  Serial.println(fwdVelocities.xDot);
-  Serial.print("yDot: ");
-  Serial.println(fwdVelocities.yDot);
-  Serial.print("thDot: ");
-  Serial.println(fwdVelocities.thetaDot);
+  Serial2.print("xDot: ");
+  Serial2.print(fwdVelocities.xDot);
+  Serial2.print(" | yDot: ");
+  Serial2.print(fwdVelocities.yDot);
+  Serial2.print(" | thDot: ");
+  Serial2.println(fwdVelocities.thetaDot);
 
-  // Uncomment when above is working
   gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
 
-  Serial.print("xPos: ");
-  Serial.println(gRobotPose.x);
-  Serial.print("yPos: ");
-  Serial.println(gRobotPose.y);
-  Serial.print("thPos: ");
-  Serial.println(gRobotPose.theta);
+  Serial2.print("xPos: ");
+  Serial2.println(gRobotPose.x);
+  Serial2.print("yPos: ");
+  Serial2.println(gRobotPose.y);
+  Serial2.print("thPos: ");
+  Serial2.println(gRobotPose.theta);
 }
