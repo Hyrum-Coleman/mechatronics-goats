@@ -65,14 +65,20 @@ void loop() {
   Serial2.print(" | yDot: ");
   Serial2.print(fwdVelocities.yDot);
   Serial2.print(" | thDot: ");
-  Serial2.println(fwdVelocities.thetaDot);
+  Serial2.print(fwdVelocities.thetaDot);
 
   gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
 
-  Serial2.print("xPos: ");
-  Serial2.println(gRobotPose.x);
+  Serial2.print(" | xPos: ");
+  Serial2.print(gRobotPose.x);
+  Serial2.print(" | ");
   Serial2.print("yPos: ");
-  Serial2.println(gRobotPose.y);
+  Serial2.print(gRobotPose.y);
+  Serial2.print(" | ");
   Serial2.print("thPos: ");
   Serial2.println(gRobotPose.theta);
+
+  if (millis() > 5000) {
+    wheels.setSpeeds(0, 0, 0, 0);
+  }
 }
