@@ -3,7 +3,10 @@
 // However, we don't neccesarily scale all the way up to -400,400. We scale up to -maxSpeed,maxSpeed, which is gDriveSpeed in our calls to this function at the moment.
 void mapWheelSpeeds(float* wheelSpeeds, unsigned long maxSpeed) {
   for (int i = 0; i < cNumberOfWheels; i++) {
-    wheelSpeeds[i] = mapf(wheelSpeeds[i], -7.82, 7.82, -1 * maxSpeed, maxSpeed);
+    // Don't change the *1.0's unless you are willing to dig into some low level c witchcraft.
+    // It WILL break the robot if you remove them. Even though those arguments are being static casted to float inside mapFloat.
+    // Mapfloat is being used to prevent integer rounding when we have small wheel speeds.
+    wheelSpeeds[i] = static_cast<int>(mapFloat(1.0*wheelSpeeds[i], -7.82, 7.82, -1.0*maxSpeed, 1.0*maxSpeed));
   }
 }
 
@@ -37,7 +40,7 @@ void radSecToMotorDriverSpeeds(float* radSecWheelSpeeds) {
 
   // Finally, map to our motor drivers scale. Contstrain may be uneccesary now.
   for (int i = 0; i < cNumberOfWheels; i++) {
-    radSecWheelSpeeds[i] = mapf(radSecWheelSpeeds[i], -cRobotMaxSpeedRadSec, cRobotMaxSpeedRadSec, -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
+    radSecWheelSpeeds[i] = static_cast<int>(mapFloat(1.0*radSecWheelSpeeds[i], -1.0*cRobotMaxSpeedRadSec, 1.0*cRobotMaxSpeedRadSec, -1.0*cRobotDriverMaxSpeed, 1.0*cRobotDriverMaxSpeed));
     radSecWheelSpeeds[i] = constrain(radSecWheelSpeeds[i], -cRobotDriverMaxSpeed, cRobotDriverMaxSpeed);
   }
 
@@ -68,7 +71,14 @@ float thetaToInches(float theta) {
 }
 
 // Like map but for floats. I can't belive its been rounding this whole time.
-long mapf(float x, float in_min, float in_max, float out_min, float out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+  // Explicitly cast all arguments to float. Was having rounding errors.
+  float x_f = static_cast<float>(x);
+  float in_min_f = static_cast<float>(in_min);
+  float in_max_f = static_cast<float>(in_max);
+  float out_min_f = static_cast<float>(out_min);
+  float out_max_f = static_cast<float>(out_max);
+  return (x_f - in_min_f) * (out_max_f - out_min_f) / (in_max_f - in_min_f) + out_min_f;
 }
+
+

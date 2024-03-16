@@ -27,6 +27,8 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
 }
 
 void labStylePositionControl(Pose goalPose, float driveTime) {
+  // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
+
   Velocities fwdVelocities;
   Pose nextPose;
   float thresh = 1.0;
@@ -99,6 +101,8 @@ void labStylePositionControl(Pose goalPose, float driveTime) {
 
 // Experimental function that controls our robot with desired velocities until a condition is met.
 void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCondition term) {
+  // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
+
   // Array to store wheel speeds calculated based on desired velocities
   float wheelSpeeds[cNumberOfWheels];
   // Array to store odometry speeds (for use in while loop)

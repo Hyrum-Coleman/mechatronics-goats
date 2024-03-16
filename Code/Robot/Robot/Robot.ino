@@ -49,13 +49,15 @@ const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
 const unsigned int cProximityThreshold = 10;
 const float cHallReloadingQuiescent = 512;
-const float cRobotMaxSpeedRadSec = 10000000;
+const float cRobotMaxSpeedRadSec = 17.488;
+const float cRobotMaxSpeedRpm = 167;
 const int cRobotDriverMaxSpeed = 400;
 const int cEncoderCountsPerRev = 64;
 const int cWheelMotorGearRatio = 50;
 const float cWheelRadius = 1.2795;
 const float cWheelBaseLx = 5.0625;
 const float cWheelBaseLy = 4.386;
+const float cRobotMaxSpeedInSec = cRobotMaxSpeedRadSec * cWheelRadius;
 // Pins
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
 const int cDistPin2 = A5;  // Right IR rangefinder sensor
@@ -90,8 +92,6 @@ L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(cWheelBaseLx, cWheelBaseLy, cWheelRadius);
 // For keeping track of previous standby state so we can return to it
 States gLastStandbyState;
-
-
 
 //-----------------ENTRY POINT-----------------
 int main() {
