@@ -94,13 +94,13 @@ void loop() {
 
   if (gRobotPose.y > 10) {
     wheels.setSpeeds(0, 0, 0, 0);
-    delay(1000);
+    delay(200);
     gRobotPose.reset_pose();
     wheels.setSpeeds(100, 100, 100, 100);
   }
   else if (gRobotPose.theta < (-1.570797)) {
     wheels.setSpeeds(0, 0, 0, 0);
-    delay(1000);
+    delay(200);
     gRobotPose.reset_pose();
     wheels.setSpeeds(100, -100, 100, -100);
   }
