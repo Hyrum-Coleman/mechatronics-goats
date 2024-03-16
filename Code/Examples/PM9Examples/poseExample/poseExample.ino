@@ -2,6 +2,7 @@
 #include "Pose.h"
 #include "MotorRamp.h"
 #include "WheelBase.h"
+#include "IIRFilter.h"
 #include <DualTB9051FTGMotorShieldMod3230.h>
 #include <Arduino.h>
 
@@ -26,10 +27,18 @@ float odomWheelSpeeds[4];
 DualTB9051FTGMotorShieldMod3230 wheels;
 
 const float cWheelRadius = 1.2795;
-const float cWheelBaseLx = 5.0625;
-const float cWheelBaseLy = 4.386;
+const float cWheelBaseLx = 5.1875;
+const float cWheelBaseLy = 4.40625;
 
 Wheelbase* gWheelbase = new Wheelbase(cWheelBaseLx, cWheelBaseLy, cWheelRadius);
+
+//IIRFilter xDotFilter(0.5);
+//IIRFilter yDotFilter(0.5);
+//IIRFilter thetaDotFilter(0.5);
+
+float filteredXDot;
+float filteredYDot;
+float filteredThetaDot;
 
 void setup() {
   Serial2.begin(9600);
@@ -44,6 +53,7 @@ void setup() {
 
 
 void loop() {
+
   odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();
   odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
   odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
@@ -67,6 +77,10 @@ void loop() {
   Serial2.print(" | thDot: ");
   Serial2.print(fwdVelocities.thetaDot);
 
+  //filteredXDot = xDotFilter.process(fwdVelocities.xDot);
+  //filteredYDot = yDotFilter.process(fwdVelocities.yDot);
+  //filteredThetaDot = thetaDotFilter.process(fwdVelocities.thetaDot);
+
   gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
 
   Serial2.print(" | xPos: ");
@@ -78,7 +92,19 @@ void loop() {
   Serial2.print("thPos: ");
   Serial2.println(gRobotPose.theta);
 
-  if (millis() > 5000) {
+  if (gRobotPose.y > 10) {
     wheels.setSpeeds(0, 0, 0, 0);
+    delay(1000);
+    gRobotPose.reset_pose();
+    wheels.setSpeeds(100, 100, 100, 100);
   }
+  else if (gRobotPose.theta < (-1.570797)) {
+    wheels.setSpeeds(0, 0, 0, 0);
+    delay(1000);
+    gRobotPose.reset_pose();
+    wheels.setSpeeds(100, -100, 100, -100);
+  }
+  //else if (gRobotPose.y > 10) {
+  //  wheels.setSpeeds(0, 0, 0, 0);
+  //}
 }

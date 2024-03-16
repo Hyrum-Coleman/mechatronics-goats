@@ -55,8 +55,8 @@ const int cRobotDriverMaxSpeed = 400;
 const int cEncoderCountsPerRev = 64;
 const int cWheelMotorGearRatio = 50;
 const float cWheelRadius = 1.2795;
-const float cWheelBaseLx = 5.0625;
-const float cWheelBaseLy = 4.386;
+const float cWheelBaseLx = 5.1875;
+const float cWheelBaseLy = 4.40625;
 const float cRobotMaxSpeedInSec = cRobotMaxSpeedRadSec * cWheelRadius;
 // Pins
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
