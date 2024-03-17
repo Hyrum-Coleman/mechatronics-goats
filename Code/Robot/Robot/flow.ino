@@ -95,14 +95,21 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       DEBUG_PRINTLN("CALIBRATING COLORS");
       calibrateColorSensor();
       break;
-    case RemoteButtons::eForward:  // run the course code
-      DEBUG_PRINTLN("BEGINNING RELOAD TEST");
-      move.moveType = MoveType::eLineFollow;  // linefollow up to reloader. This is a placeholder sorta
-      move.params.linefollowParams.speed = gDriveSpeed;
-      move.params.linefollowParams.stopDistance = 10;
-      moveQueue->push(move);
-      executeMoveSequence(moveQueue);
-      executeReload(blocks);
+    case RemoteButtons::eForward:  // run tests
+      //DEBUG_PRINTLN("BEGINNING RELOAD TEST");
+      //move.moveType = MoveType::eLineFollow;  // linefollow up to reloader. This is a placeholder sorta
+      //move.params.linefollowParams.speed = gDriveSpeed;
+      //move.params.linefollowParams.stopDistance = 2.5;
+      //moveQueue->push(move);
+      //executeMoveSequence(moveQueue);
+      //executeReload(blocks);
+
+      Pose goalPose(0, 10, 0); // 10 inches forward
+      driveInStraightLine(goalPose, 2);// temporary function for PM9 because I cant figure out the threshold problem.
+      gRobotPose.reset_pose();
+      goalPose.reset_pose(0, 0, HALF_PI); // 90 degrees ccw
+      rotateInPlace(goalPose, 2); // temporary function for PM9 because I cant figure out the threshold problem.
+      //Pose goalPose(15.71, 0, 1.571); // Should strafe sideways while rotating at an equal rate. Ends at 90 deg.
       break;
     case RemoteButtons::eVolPlus:      // Drive forwards
     case RemoteButtons::eBack:         // Drive left

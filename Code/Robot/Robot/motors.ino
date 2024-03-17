@@ -26,14 +26,13 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
   }
 }
 
-void labStylePositionControl(Pose goalPose, float driveTime) {
-  // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
+// For PM9 only so we don't fail.
+void driveInStraightLine(Pose goalPose, float driveTime) {
 
   Velocities fwdVelocities;
   Pose nextPose;
-  float thresh = 1.0;
-  float thresh_th = 0.2;
-  float Kp = 1.0;
+
+  float Kp = 1;
   // Array to store calculated errors
   float wheelSpeedsDes[cNumberOfWheels];
   // Array to store measured wheel speeds
@@ -42,38 +41,32 @@ void labStylePositionControl(Pose goalPose, float driveTime) {
   float controlSignals[cNumberOfWheels];
 
   // These are analagous to omega_des in the lab9 code
-  float vx_des = (goalPose.x - gRobotPose.x) / driveTime;
   float vy_des = (goalPose.y - gRobotPose.y) / driveTime;
-  float vth_des = (goalPose.theta - gRobotPose.theta) / driveTime; 
+  int directionFactor = 1;
+  if (vy_des < 0) {
+    directionFactor *= -1;
+  }
 
   double tOld = micros() / 1000000.;
+  double tInit = micros() / 1000000.;
   double t, deltaT;
 
-  float err_x, err_y, err_th;
-  float u_x, u_y, u_th;
+  float err_y, u_y;
 
-  do {
+  while ((directionFactor * gRobotPose.y) < (directionFactor * goalPose.y)) {
     t = micros() / 1000000.;
     deltaT = t - tOld;
 
-    nextPose.x += vx_des * deltaT;
     nextPose.y += vy_des * deltaT;
-    nextPose.theta += vth_des * deltaT;
 
-    // generate errors between present pose and next pose
-    err_x = nextPose.x - gRobotPose.x;
     err_y = nextPose.y - gRobotPose.y;
-    err_th = nextPose.theta - gRobotPose.theta;
 
-    // PID will go here. These are the 'control signals' before transforming to robot coordinates and mapping to correct units.
-    u_x = Kp * err_x;
     u_y = Kp * err_y;
-    u_th = Kp * err_th;
 
     // Transform control signals to robot coordinates
-    gWheelbase->computeWheelSpeeds(u_x, u_y, u_th, controlSignals);
+    gWheelbase->computeWheelSpeeds(0, u_y, 0, controlSignals);
     // Account for the polarity of our motors.
-    controlSignals[1] *= -1; //( [] [-] [] [-] )
+    controlSignals[1] *= -1;  //( [] [-] [] [-] )
     controlSignals[3] *= -1;
 
     // Convert control signals from rad/sec to motor driver units
@@ -83,7 +76,7 @@ void labStylePositionControl(Pose goalPose, float driveTime) {
     gMecanumMotors.setSpeeds(controlSignals[0], controlSignals[1], controlSignals[2], controlSignals[3]);
 
     // Get current wheel speeds from encoders
-    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec(); // flip is taken care of in the wheel manager
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();  // flip is taken care of in the wheel manager
     odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
@@ -96,7 +89,206 @@ void labStylePositionControl(Pose goalPose, float driveTime) {
     gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
 
     tOld = t;
-  } while (abs(err_x) > thresh || abs(err_y) > thresh || abs(err_th) > thresh_th); // need different thresh for theta beacuse rads
+  }
+  // Turn wheels back off
+  gMecanumMotors.setSpeeds(0, 0, 0, 0);
+}
+
+// For PM9 only so we don't fail.
+void rotateInPlace(Pose goalPose, float driveTime) {
+  Velocities fwdVelocities;
+  Pose nextPose;
+
+  float Kp = 1;
+  // Array to store calculated errors
+  float wheelSpeedsDes[cNumberOfWheels];
+  // Array to store measured wheel speeds
+  float odomWheelSpeeds[cNumberOfWheels];
+  // Array to store control signals for the wheels
+  float controlSignals[cNumberOfWheels];
+
+  // These are analagous to omega_des in the lab9 code
+  float vth_des = (goalPose.theta - gRobotPose.theta) / driveTime;
+  int directionFactor = 1;
+  if (vth_des < 0) {
+    directionFactor *= -1;
+  }
+
+  double tOld = micros() / 1000000.;
+  double tInit = micros() / 1000000.;
+  double t, deltaT;
+
+  float err_th, u_th;
+
+  while ((directionFactor * gRobotPose.theta) < (directionFactor * goalPose.theta)) {
+    t = micros() / 1000000.;
+    deltaT = t - tOld;
+
+    nextPose.theta += vth_des * deltaT;
+
+    err_th = nextPose.theta - gRobotPose.theta;
+
+    u_th = Kp * err_th;
+
+    // Transform control signals to robot coordinates
+    gWheelbase->computeWheelSpeeds(0, 0, u_th, controlSignals);
+    // Account for the polarity of our motors.
+    controlSignals[1] *= -1;  //( [] [-] [] [-] )
+    controlSignals[3] *= -1;
+
+    // Convert control signals from rad/sec to motor driver units
+    radSecToMotorDriverSpeeds(controlSignals);
+
+    // Set the speeds to the control signals
+    gMecanumMotors.setSpeeds(controlSignals[0], controlSignals[1], controlSignals[2], controlSignals[3]);
+
+    // Get current wheel speeds from encoders
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();  // flip is taken care of in the wheel manager
+    odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
+
+    // Calculate current velocity based on wheel speeds and fwd kinematics
+    // modifies fwdVelocities in place
+    gWheelbase->computeVelocities(odomWheelSpeeds, fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+    // Update pose based on updated velocities
+    gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+    DEBUG_PRINT("Robot/goal:  ");
+    DEBUG_PRINT(gRobotPose.x);
+    DEBUG_PRINT(" ");
+    DEBUG_PRINT(gRobotPose.y);
+    DEBUG_PRINT(" ");
+    DEBUG_PRINT(gRobotPose.theta);
+    DEBUG_PRINT(" | ");
+    DEBUG_PRINT(goalPose.x);
+    DEBUG_PRINT(" ");
+    DEBUG_PRINT(goalPose.y);
+    DEBUG_PRINT(" ");
+    DEBUG_PRINTLN(goalPose.theta);
+
+    tOld = t;
+  }
+  // Turn wheels back off
+  gMecanumMotors.setSpeeds(0, 0, 0, 0);
+}
+
+void labStylePositionControl(Pose goalPose, float driveTime) {
+  // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
+
+  Velocities fwdVelocities;
+  Pose nextPose;
+
+  float Kp = 1;
+  // Array to store calculated errors
+  float wheelSpeedsDes[cNumberOfWheels];
+  // Array to store measured wheel speeds
+  float odomWheelSpeeds[cNumberOfWheels];
+  // Array to store control signals for the wheels
+  float controlSignals[cNumberOfWheels];
+
+  // These are analagous to omega_des in the lab9 code
+  float vx_des = (goalPose.x - gRobotPose.x) / driveTime;  // in/s
+  float vy_des = (goalPose.y - gRobotPose.y) / driveTime;
+  float vth_des = (goalPose.theta - gRobotPose.theta) / driveTime;
+
+  double tOld = micros() / 1000000.;
+  double tInit = micros() / 1000000.;
+  double t, deltaT, elapsedTime;
+
+  float err_x, err_y, err_th;
+  float u_x, u_y, u_th, u_x_global, u_y_global;
+  float errorThreshInches = 0.2;
+  float errorThreshRad = 0.1;
+  float errorThresh = 0.2;
+
+  while (!goalPose.alignedInErrorDir(gRobotPose, errorThresh, vx_des, vy_des, vth_des)){
+    t = micros() / 1000000.;
+    deltaT = t - tOld;
+
+    // Adjust v here to prevent overshoot? Ultimately, desired velocities need to change if we overshoot or have error.
+    // The below approach almost works, unless elapsedTime = driveTime. I cant make sense of it.
+    // NEED HELP HERE
+    //elapsedTime = t - tInit;
+    //vx_des = (goalPose.x - gRobotPose.x) / (driveTime-elapsedTime); // in/s
+    //vy_des = (goalPose.y - gRobotPose.y) / (driveTime-elapsedTime);
+    //vth_des = (goalPose.theta - gRobotPose.theta) / (driveTime-elapsedTime);
+
+    nextPose.x += vx_des * deltaT;
+    nextPose.y += vy_des * deltaT;
+    nextPose.theta += vth_des * deltaT;
+
+    // Rotate the next pose to the robots coordinate system.
+    // IE, rotate to cancel out the robots preexisting rotation.
+    // This does not change nextPose.theta, counterintuitively.
+    //nextPose.rotate(-gRobotPose.theta);
+
+    // generate errors between present pose and next pose.
+    err_x = nextPose.x - gRobotPose.x;
+    err_y = nextPose.y - gRobotPose.y;
+    err_th = nextPose.theta - gRobotPose.theta;
+
+    //DEBUG_PRINT("ERRORS: ");
+    //DEBUG_PRINT(err_x);
+    //DEBUG_PRINT(" | ");
+    //DEBUG_PRINT(err_y);
+    //DEBUG_PRINT(" | ");
+    //DEBUG_PRINTLN(err_th);
+
+    // PID will go here. These are the 'control signals' before transforming to robot coordinates and mapping to correct units.
+    u_x = Kp * err_x;
+    u_y = Kp * err_y;
+    u_th = Kp * err_th;
+
+    // Transform control signals to robot coordinates
+    gWheelbase->computeWheelSpeeds(u_x, u_y, u_th, controlSignals);
+    // Account for the polarity of our motors.
+    controlSignals[1] *= -1;  //( [] [-] [] [-] )
+    controlSignals[3] *= -1;
+
+    // Convert control signals from rad/sec to motor driver units
+    radSecToMotorDriverSpeeds(controlSignals);
+
+    // Set the speeds to the control signals
+    gMecanumMotors.setSpeeds(controlSignals[0], controlSignals[1], controlSignals[2], controlSignals[3]);
+
+    // Get current wheel speeds from encoders
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();  // flip is taken care of in the wheel manager
+    odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
+
+    // Calculate current velocity based on wheel speeds and fwd kinematics
+    // modifies fwdVelocities in place
+    gWheelbase->computeVelocities(odomWheelSpeeds, fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+    // Update pose based on updated velocities
+    gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+    //DEBUG_PRINT("ROBOT POSE: ");
+    //DEBUG_PRINT(gRobotPose.x);
+    //DEBUG_PRINT(" | ");
+    //DEBUG_PRINT(gRobotPose.y);
+
+    //DEBUG_PRINT("Robot/goal:  ");
+    //DEBUG_PRINT(gRobotPose.x);
+    //DEBUG_PRINT(" ");
+    //DEBUG_PRINT(gRobotPose.y);
+    //DEBUG_PRINT(" ");
+    //DEBUG_PRINT(gRobotPose.theta);
+    //DEBUG_PRINT(" | ");
+    //DEBUG_PRINT(goalPose.x);
+    //DEBUG_PRINT(" ");
+    //DEBUG_PRINT(goalPose.y);
+    //DEBUG_PRINT(" ");
+    //DEBUG_PRINTLN(goalPose.theta);
+
+    tOld = t;
+  }
+  //while(!goalPose.aligned(gRobotPose, errorThreshInches, errorThreshRad));
+  // Turn wheels back off
+  gMecanumMotors.setSpeeds(0, 0, 0, 0);
 }
 
 // Experimental function that controls our robot with desired velocities until a condition is met.
@@ -113,23 +305,23 @@ void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCond
   Velocities ikVelocities;
 
   // Calculate required wheel speeds to achieve desired velocities
-  gWheelbase->computeWheelSpeeds(v.xDot , v.yDot, v.thetaDot, wheelSpeeds);
+  gWheelbase->computeWheelSpeeds(v.xDot, v.yDot, v.thetaDot, wheelSpeeds);
   // now take the integral of this to get position?
-  
+
   // Wheelspeeds now contains goal rad/sec values for each wheel.
   // Account for the polarity of our motors.
   wheelSpeeds[1] *= -1;
   wheelSpeeds[3] *= -1;
-  // We now want to command the motors to those speeds. 
+  // We now want to command the motors to those speeds.
   // More specifically, we want to ramp smoothly up to the goal speeds while numerically integrating our position until we reach the termination condition.
   // Initialize the ramp with 1 second ramp up time.
-  // It will ramp up our speeds based on the current time and the ramp time. 
+  // It will ramp up our speeds based on the current time and the ramp time.
   // If our current time exceeds the ramp time, the original goal will be returned.
   MotorRamp ramp(wheelSpeeds, 1000);
-  while (!term.tripped) { // while the condition has not been met
+  while (!term.tripped) {  // while the condition has not been met
     // Update odometry
     // Todo: make wheelmanager manage all 4 wheels (take in an int to choose which wheel)
-    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec(); // flip is taken care of in the wheel manager
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();  // flip is taken care of in the wheel manager
     odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
     odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
@@ -141,7 +333,7 @@ void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCond
     gRobotPose.update_pos(ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
 
     // Map controlSignals to our ramp function. Internally based on time and the goal speeds set when instantiating MotorRamp.
-    ramp.setControlSignals(controlSignals); // mutates controlsignals
+    ramp.setControlSignals(controlSignals);  // mutates controlsignals
 
     // Before calling setSpeeds, we map to -400, 400
     radSecToMotorDriverSpeeds(controlSignals);
@@ -482,7 +674,6 @@ void squareUpUsingProx(int speed) {
 
   // Stop all wheels once squared up with the wall
   gMecanumMotors.setSpeeds(0, 0, 0, 0);
-  
 }
 
 
@@ -518,7 +709,7 @@ void centerOnIrArray(int speed) {
 
 // Makes the robot physically push the button. It first drives forward to the correct distance for begging to push the button.
 void pushButton(int speed) {
-  const float targetProximityForward = 0.4; //inches
+  const float targetProximityForward = 0.4;  //inches
   const float targetProximityBackward = 1.75;
 
   // Drive forward until the proximity sensor reads less than 3 cm
@@ -585,7 +776,7 @@ void runWheelMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
 
 
 
-// Maps goal speeds to the motor libraries range (0 to 400) and sets the motors to those speeds. 
+// Maps goal speeds to the motor libraries range (0 to 400) and sets the motors to those speeds.
 void runWheelMotorsDirectly(float* targetWheelSpeeds) {
   if (!targetWheelSpeeds) {
     DEBUG_PRINTLN("Error: targetWheelSpeeds is null.");
