@@ -10,8 +10,6 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-
-
 void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
   for (JsonObject obj : doc["g"].as<JsonArray>()) {  // g for go
     Move currentMove;
@@ -72,8 +70,6 @@ void standbyJSON(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) 
   }
 }
 
-
-
 void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>* blocks, States& state) {
   DEBUG_PRINT("STANDBY IR... <");
   DEBUG_PRINT(millis() / 1000.0);
@@ -104,12 +100,26 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       //executeMoveSequence(moveQueue);
       //executeReload(blocks);
 
-      Pose goalPose(0, 10, 0); // 10 inches forward
+      /*Pose goalPose(0, 10, 0); // 10 inches forward
       driveInStraightLine(goalPose, 2);// temporary function for PM9 because I cant figure out the threshold problem.
       gRobotPose.reset_pose();
       goalPose.reset_pose(0, 0, HALF_PI); // 90 degrees ccw
       rotateInPlace(goalPose, 2); // temporary function for PM9 because I cant figure out the threshold problem.
-      //Pose goalPose(15.71, 0, 1.571); // Should strafe sideways while rotating at an equal rate. Ends at 90 deg.
+      //Pose goalPose(15.71, 0, 1.571); // Should strafe sideways while rotating at an equal rate. Ends at 90 deg.*/
+      Pose goalPose(0, 20, 0); 
+      driveToGoalPose(goalPose, 2);
+      gRobotPose.reset_pose();
+      goalPose.reset_pose(0, 0, PI);
+      driveToGoalPose(goalPose, 2);
+      gRobotPose.reset_pose();
+      goalPose.reset_pose(0, 10, 0); 
+      driveToGoalPose(goalPose, 2);
+      goalPose.reset_pose(0, 0, PI);
+      driveToGoalPose(goalPose, 2);
+      gRobotPose.reset_pose();
+      goalPose.reset_pose(0, -10, 0);
+      driveToGoalPose(goalPose, 2);
+      gRobotPose.reset_pose();
       break;
     case RemoteButtons::eVolPlus:      // Drive forwards
     case RemoteButtons::eBack:         // Drive left
@@ -152,8 +162,6 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
   IrReceiver.resume();
   delay(100);  //debounce
 }
-
-
 
 void standbyRC(States& state) {
   DEBUG_PRINT("STANDBY RC... <");
@@ -224,8 +232,6 @@ void standbyRC(States& state) {
   IrReceiver.resume();
   gLastRCCommandTime = millis();
 }
-
-
 
 // The mode where sensor values are printed continuously. 
 void standbySensorDump(States& state) {

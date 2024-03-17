@@ -71,11 +71,11 @@ enum TerminationType {
   AngleReached,
 };
 
-struct Velocities {
+/*struct Velocities {
   float xDot;
   float yDot;
   float thetaDot;
-};
+};*/
 
 struct Block {
   BlockColor color;

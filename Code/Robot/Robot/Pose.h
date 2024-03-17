@@ -5,7 +5,7 @@
 
 class Pose {
 private:
-  unsigned long lastUpdateTime;
+  double lastUpdateTime;
 
 public:
   // Properties
@@ -13,11 +13,11 @@ public:
 
   // constructor
   Pose(float initX = 0.0, float initY = 0.0, float initTheta = 0.0)
-    : x(initX), y(initY), theta(initTheta), lastUpdateTime(millis()) {}
+    : x(initX), y(initY), theta(initTheta), lastUpdateTime((double)micros() / 1000000.) {}
 
   void update_pos(float x_dot, float y_dot, float theta_dot) {
-    unsigned long currentTime = millis();
-    float dt = (currentTime - lastUpdateTime) / 1000.0;  // Convert milliseconds to seconds
+    double currentTime = (double)micros() / 1000000.; // in s
+    float dt = (currentTime - lastUpdateTime); 
     x += x_dot * dt;
     y += y_dot * dt;
     theta += theta_dot * dt;
@@ -65,6 +65,18 @@ public:
     float projection = diffX * dirX + diffY * dirY + diffTheta * dirTheta;
 
     return abs(projection) <= adjustedThreshold;
+  }
+
+  float getDistanceToOtherPose(const Pose& otherPose) {
+    float dx = otherPose.x - x;
+    float dy = otherPose.y - y;
+
+    return sqrt(dx*dx + dy*dy);
+  }
+
+  float getAngularDistanceToOtherPose(const Pose& otherPose) {
+    float dth = otherPose.theta - theta;
+    return dth;
   }
 
 

@@ -33,6 +33,7 @@
 #include "EncoderManager.h"
 #include "Pose.h"
 #include "MotorRamp.h"
+#include "Velocities.h"
 //---------------------------------------------
 
 //---------------Global Variables--------------
@@ -207,4 +208,24 @@ void setPinModes() {
   pinMode(cHallSensorPin, INPUT);
   pinMode(cDistPin1, INPUT);
   pinMode(cDistPin2, INPUT);
+}
+
+void printPose(const char* prefix, const Pose& pose) {
+  Serial2.print(prefix);
+  Serial2.print(" x: ");
+  Serial2.print(pose.x, 4); // Print with 4 decimal places
+  Serial2.print(", y: ");
+  Serial2.print(pose.y, 4); // Adjust the decimal places as needed
+  Serial2.print(", theta: ");
+  Serial2.println(pose.theta, 4); // Print theta and move to a new line
+}
+
+void printVelocity(const char* prefix, const Velocities& vel) {
+  Serial2.print(prefix);
+  Serial2.print(" xdot: ");
+  Serial2.print(vel.xDot, 4); // Print with 4 decimal places
+  Serial2.print(", ydot: ");
+  Serial2.print(vel.yDot, 4); // Adjust the decimal places as needed
+  Serial2.print(", thetadot: ");
+  Serial2.println(vel.thetaDot, 4); // Print theta and move to a new line
 }
