@@ -97,7 +97,9 @@ struct DrivingTerminationCondition {
 // Union for move-specific parameters
 union MoveParameters {
   struct {
+    // Change to Pose pose;
     Directions direction;    // which way to drive (will be [x,y,theta] in the future)
+    // Change to double driveTime;
     unsigned long duration;  // how far to go (will be distance not time in the future)
   } freedriveParams;         // For eFreeDrive
 

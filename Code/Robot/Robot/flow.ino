@@ -100,26 +100,22 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       //executeMoveSequence(moveQueue);
       //executeReload(blocks);
 
-      /*Pose goalPose(0, 10, 0); // 10 inches forward
-      driveInStraightLine(goalPose, 2);// temporary function for PM9 because I cant figure out the threshold problem.
+      driveInStraightLine(20, 2);
+      rotateInPlaceDegrees(180, 2); 
+      driveInArcDegrees(10, 90, 3); 
+
+      /*Pose goalPose(0, 20, 0); 
+      driveToGoalPose(goalPose, 1.5);
       gRobotPose.reset_pose();
-      goalPose.reset_pose(0, 0, HALF_PI); // 90 degrees ccw
-      rotateInPlace(goalPose, 2); // temporary function for PM9 because I cant figure out the threshold problem.
-      //Pose goalPose(15.71, 0, 1.571); // Should strafe sideways while rotating at an equal rate. Ends at 90 deg.*/
-      Pose goalPose(0, 20, 0); 
-      driveToGoalPose(goalPose, 2);
-      gRobotPose.reset_pose();
+
       goalPose.reset_pose(0, 0, PI);
       driveToGoalPose(goalPose, 2);
       gRobotPose.reset_pose();
-      goalPose.reset_pose(0, 10, 0); 
+
+      goalPose.reset_pose(20, 0, 0);
       driveToGoalPose(goalPose, 2);
-      goalPose.reset_pose(0, 0, PI);
-      driveToGoalPose(goalPose, 2);
-      gRobotPose.reset_pose();
-      goalPose.reset_pose(0, -10, 0);
-      driveToGoalPose(goalPose, 2);
-      gRobotPose.reset_pose();
+      gRobotPose.reset_pose();*/
+
       break;
     case RemoteButtons::eVolPlus:      // Drive forwards
     case RemoteButtons::eBack:         // Drive left
