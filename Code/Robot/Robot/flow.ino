@@ -104,15 +104,15 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       rotateInPlaceDegrees(180, 2); 
       driveInArcDegrees(10, 90, 3); 
 
-      /*Pose goalPose(0, 20, 0); 
-      driveToGoalPose(goalPose, 1.5);
+      /*Pose goalPose(20, 20, 0); 
+      driveToGoalPose(goalPose, 4);
+      gRobotPose.reset_pose();
+
+      goalPose.reset_pose(-20, -20, PI);
+      driveToGoalPose(goalPose, 7);
       gRobotPose.reset_pose();
 
       goalPose.reset_pose(0, 0, PI);
-      driveToGoalPose(goalPose, 2);
-      gRobotPose.reset_pose();
-
-      goalPose.reset_pose(20, 0, 0);
       driveToGoalPose(goalPose, 2);
       gRobotPose.reset_pose();*/
 
