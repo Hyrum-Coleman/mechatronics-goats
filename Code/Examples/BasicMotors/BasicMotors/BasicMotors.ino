@@ -25,26 +25,6 @@ void loop() {
 
   if (message.equals("Go!")) {
 
-    l2_driver.setM1Speed(300);
-    delay(500);
-    l2_driver.setM1Speed(0);
-    delay(500);
-
-    l2_driver.setM1Speed(-300);
-    delay(500);
-    l2_driver.setM1Speed(0);
-    delay(500);
-
-    l2_driver.setM2Speed(300);
-    delay(500);
-    l2_driver.setM2Speed(0);
-    delay(500);
-
-    l2_driver.setM2Speed(-300);
-    delay(500);
-    l2_driver.setM2Speed(0);
-    delay(500);
-
     wheels.setSpeeds(255, -255, 255, -255);
     delay(500);
     wheels.setSpeeds(0, 0, 0, 0);

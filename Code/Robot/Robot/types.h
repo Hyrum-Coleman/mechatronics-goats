@@ -1,3 +1,12 @@
+enum States {
+  eMoving = 0,
+  eStandbyJSON = 1,
+  eStandbyIR = 2,
+  eStandbyRC = 3,
+  eReloading = 4,
+  eSensorDumpMode = 5
+};
+
 enum Directions {
   eForwards = 1,
   eLeft = 2,
@@ -39,9 +48,46 @@ enum RemoteButtons {
   eNine = 74
 };
 
+enum BlockColor {
+  Red,
+  Blue,
+  Yellow,
+  None,
+  UnCalibrated,
+};
+
+struct Velocities {
+  float xDot;
+  float yDot;
+  float thetaDot;
+};
+
+struct Block {
+  BlockColor color;
+};
+
+struct RGB {
+  uint16_t r;
+  uint16_t g;
+  uint16_t b;
+};
+
+enum TerminationType {
+  LineCovered,
+  LineCentered,
+  AverageDistanceAway,
+  DistanceTraveled,
+  TimeExpired,
+};
+
+struct DrivingTerminationCondition {
+  TerminationType type;
+  int terminationValue;
+  bool tripped;
+};
 
 
-// Onion for move-specific parameters
+// Union for move-specific parameters
 union MoveParameters {
   struct {
     Directions direction;    // which way to drive (will be [x,y,theta] in the future)
@@ -72,17 +118,3 @@ struct Move {
   MoveParameters params;
 };
 
-enum States {
-  eMoving = 0,
-  eStandbyJSON = 1,
-  eStandbyIR = 2,
-  eStandbyRC = 3,
-  eAdjustmentMode = 4
-};
-
-enum AdjustmentSubModes {
-  eNotAdjusting = 0,
-  eAdjustingDriveSpeed = 1,
-  eAdjustingRemoteControlDuration = 2
-  // Add more adjustment modes as needed
-};

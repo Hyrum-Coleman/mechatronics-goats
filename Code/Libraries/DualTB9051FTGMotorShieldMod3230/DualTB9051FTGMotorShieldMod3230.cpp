@@ -8,7 +8,7 @@
 DualTB9051FTGMotorShieldMod3230::DualTB9051FTGMotorShieldMod3230()
 {
   //Pin map
-  _M1EN = 2;
+  _M1EN = 12;
   _M1DIR = 7;
   _M1PWM = 9;
   _M1DIAG = 99;
