@@ -29,6 +29,7 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
 void driveToGoalPose(Pose goalPose, float driveTime) {
   // NEED TO ADD PID
   // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
+  // NEED TO REMOVE SILLY VELOCITY SCALE
 
   Velocities fwdVelocities;
   Velocities pathVelocities;
