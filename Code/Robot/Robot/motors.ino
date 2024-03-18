@@ -31,6 +31,11 @@ void driveToGoalPose(Pose goalPose, float driveTime) {
   // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
   // NEED TO REMOVE SILLY VELOCITY SCALE
 
+  /*
+  Adding PID will likely help prevent overshoot. As such, the velocity scale could be removed, and maybe the velocity rotation could even be removed, saving time
+  per cycle and making the PID even more effective at stopping us at the goal pose.
+  */
+
   Velocities fwdVelocities;
   Velocities pathVelocities;
   Pose nextPose;
@@ -67,7 +72,7 @@ void driveToGoalPose(Pose goalPose, float driveTime) {
   //float xyProgress
 
   while (!goalPose.aligned(gRobotPose, errorThreshInches, errorThreshRad)){
-    // Rotate goalPose to robots coordinate system here!
+    // Make sure the goal pose is relative to the way the robot is pointing.
     //goalPose.rotate(-gRobotPose.theta);
 
     // rotate path velocity to point from robot pose to goal pose always.
