@@ -66,6 +66,9 @@ void driveToGoalPose(Pose goalPose, float driveTime) {
   //float xyProgress
 
   while (!goalPose.aligned(gRobotPose, errorThreshInches, errorThreshRad)){
+    // Rotate goalPose to robots coordinate system here!
+    //goalPose.rotate(-gRobotPose.theta);
+
     // rotate path velocity to point from robot pose to goal pose always.
     // this prevents continuous overshoot caused by a non-changing velocity direction.
     pathVelocities.rotate(gRobotPose, goalPose);
@@ -103,8 +106,6 @@ void driveToGoalPose(Pose goalPose, float driveTime) {
 
     // Transform errors to robot coordinates. IE, calculate the wheel speeds required to minimize error.
     gWheelbase->computeWheelSpeeds(errorPose.x, errorPose.y, errorPose.theta, controlSignals);
-
-    // FIGURE OUT WHERE TO
 
     // Convert control signals from rad/sec to motor driver units
     radSecToMotorDriverSpeeds(controlSignals);
