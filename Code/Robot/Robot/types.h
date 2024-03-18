@@ -56,11 +56,26 @@ enum BlockColor {
   UnCalibrated,
 };
 
-struct Velocities {
+enum DistanceCalibrationMaterial {
+  Button,
+  Chassis,
+  Cardboard,
+};
+
+enum TerminationType {
+  LineCovered,
+  LineCentered,
+  AverageRangeFinderDistance,
+  DistanceTraveled,
+  TimeExpired,
+  AngleReached,
+};
+
+/*struct Velocities {
   float xDot;
   float yDot;
   float thetaDot;
-};
+};*/
 
 struct Block {
   BlockColor color;
@@ -70,14 +85,6 @@ struct RGB {
   uint16_t r;
   uint16_t g;
   uint16_t b;
-};
-
-enum TerminationType {
-  LineCovered,
-  LineCentered,
-  AverageDistanceAway,
-  DistanceTraveled,
-  TimeExpired,
 };
 
 struct DrivingTerminationCondition {
@@ -90,7 +97,9 @@ struct DrivingTerminationCondition {
 // Union for move-specific parameters
 union MoveParameters {
   struct {
+    // Change to Pose pose;
     Directions direction;    // which way to drive (will be [x,y,theta] in the future)
+    // Change to double driveTime;
     unsigned long duration;  // how far to go (will be distance not time in the future)
   } freedriveParams;         // For eFreeDrive
 

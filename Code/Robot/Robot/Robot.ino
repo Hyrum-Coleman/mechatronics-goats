@@ -29,6 +29,11 @@
 // Our custom .h and .cpp files
 #include "Wheelbase.h"
 #include "types.h"
+#include "IIRFilter.h"
+#include "EncoderManager.h"
+#include "Pose.h"
+#include "MotorRamp.h"
+#include "Velocities.h"
 //---------------------------------------------
 
 //---------------Global Variables--------------
@@ -45,13 +50,15 @@ const unsigned long cRCCommandTimeout = 110;
 const unsigned long cReloadTimeout = 5000;
 const unsigned int cProximityThreshold = 10;
 const float cHallReloadingQuiescent = 512;
-const float cRobotMaxSpeedRadSec = 10000000;
+const float cRobotMaxSpeedRadSec = 17.488;
+const float cRobotMaxSpeedRpm = 167;
 const int cRobotDriverMaxSpeed = 400;
 const int cEncoderCountsPerRev = 64;
 const int cWheelMotorGearRatio = 50;
-const float cWheelRadius = 1.2795*2; // FIX ME WHEN YOU CAN FIX THE REST OF THE CODE TOO. RADIUS IS 1.2795
-const float cWheelBaseLx = 5.0625;
-const float cWheelBaseLy = 4.386;
+const float cWheelRadius = 1.2795;
+const float cWheelBaseLx = 5.1875;
+const float cWheelBaseLy = 4.40625;
+const float cRobotMaxSpeedInSec = cRobotMaxSpeedRadSec * cWheelRadius;
 // Pins
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
 const int cDistPin2 = A5;  // Right IR rangefinder sensor
@@ -61,21 +68,31 @@ const int cIrRecievePin = 11;
 const int cHallSensorPin = A3;
 // Sensors
 uint16_t gLineSensorValues[cSensorCount];
-std::queue<float> gDistSensor1Readings;
-std::queue<float> gDistSensor2Readings;
+
+IIRFilter gDistLeftFilter(0.1);
+IIRFilter gDistRightFilter(0.1);
+IIRFilter gHallFilter(0.1);
+
 QTRSensors gQtr;
 Adafruit_APDS9960 gApds;
 float averageRedReadings[3] = { -1, -1, -1 };  // Index 0 for red, 1 for green, 2 for blue
 float averageYellowReadings[3] = { -1, -1, -1 };
 float averageBlueReadings[3] = { -1, -1, -1 };
+// Encoders pose and PID
+EncoderManager gWheel1Manager(18, 22, cEncoderCountsPerRev, cWheelMotorGearRatio, true); // flip m1 so fwd = plus counts
+EncoderManager gWheel2Manager(3, 24, cEncoderCountsPerRev, cWheelMotorGearRatio);
+EncoderManager gWheel3Manager(2, 26, cEncoderCountsPerRev, cWheelMotorGearRatio, true); // flip m3 so fwd = plus counts
+EncoderManager gWheel4Manager(19, 28, cEncoderCountsPerRev, cWheelMotorGearRatio);
+
+Pose gRobotPose;
+PID gPid(0.5, 1, 1);
+
 // Motors
 DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 L298NMotorDriverMega gL2Motors(5, 34, 32, 6, 33, 35);
 Wheelbase* gWheelbase = new Wheelbase(cWheelBaseLx, cWheelBaseLy, cWheelRadius);
 // For keeping track of previous standby state so we can return to it
 States gLastStandbyState;
-
-
 
 //-----------------ENTRY POINT-----------------
 int main() {
@@ -132,6 +149,11 @@ int main() {
 
     gApds.setADCIntegrationTime(103);  // This integration time (like shutter speed on a camera) got the best results
   }
+  // Start wheel managers
+  gWheel1Manager.begin();
+  gWheel2Manager.begin();
+  gWheel3Manager.begin();
+  gWheel4Manager.begin();
 
   setPinModes();  // This is our function to avoid writing pinMode a brazillion times in setup
 
@@ -186,4 +208,24 @@ void setPinModes() {
   pinMode(cHallSensorPin, INPUT);
   pinMode(cDistPin1, INPUT);
   pinMode(cDistPin2, INPUT);
+}
+
+void printPose(const char* prefix, const Pose& pose) {
+  Serial2.print(prefix);
+  Serial2.print(" x: ");
+  Serial2.print(pose.x, 4); // Print with 4 decimal places
+  Serial2.print(", y: ");
+  Serial2.print(pose.y, 4); // Adjust the decimal places as needed
+  Serial2.print(", theta: ");
+  Serial2.println(pose.theta, 4); // Print theta and move to a new line
+}
+
+void printVelocity(const char* prefix, const Velocities& vel) {
+  Serial2.print(prefix);
+  Serial2.print(" xdot: ");
+  Serial2.print(vel.xDot, 4); // Print with 4 decimal places
+  Serial2.print(", ydot: ");
+  Serial2.print(vel.yDot, 4); // Adjust the decimal places as needed
+  Serial2.print(", thetadot: ");
+  Serial2.println(vel.thetaDot, 4); // Print theta and move to a new line
 }

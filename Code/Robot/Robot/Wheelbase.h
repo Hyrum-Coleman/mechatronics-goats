@@ -55,7 +55,7 @@ public:
     wheelSpeeds[3] = (1 / r) * (vy + vx + factor * omega);  // Wheel 4 speed, flipped vx
   }
 
-  // UNTESTED
+  // Tested and verified. Omega is ccw from above for us. +Y is forward. +X is right.
   void computeVelocities(float wheelSpeeds[4], float &vx, float &vy, float &omega) const {
     // Compute the factor (Lx + Ly)
     float factor = Lx + Ly;
@@ -66,9 +66,9 @@ public:
     //  -1          1          1         -1
     //  -1/(lx+ly)  1/(lx+ly) -1/(lx+ly)  1/(lx+ly)
     */
-    vy = (r / 4) * (wheelSpeeds[0] - wheelSpeeds[1] - wheelSpeeds[2] + wheelSpeeds[3]);
-    vx = (r / 4) * (wheelSpeeds[0] - wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]);
-    omega = (r / (4 * factor)) * (wheelSpeeds[0] - wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]);
+    vy = (r / 4) * (wheelSpeeds[0] + wheelSpeeds[1] + wheelSpeeds[2] + wheelSpeeds[3]);
+    vx = (r / 4) * -(-wheelSpeeds[0] + wheelSpeeds[1] + wheelSpeeds[2] - wheelSpeeds[3]); // (-) because our coordinate system is flipped from the paper
+    omega = (r / (4 * factor)) * (-wheelSpeeds[0] + wheelSpeeds[1] - wheelSpeeds[2] + wheelSpeeds[3]);
   }
 };
 

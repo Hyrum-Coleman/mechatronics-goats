@@ -19,6 +19,7 @@ unsigned long prevTime = 0;
 
 void setup() {
   Serial.begin(9600);
+  Serial2.begin(9600);
   wheels.init();
   wheels.enableDrivers();
   // Initialize previous counts for each encoder
@@ -28,6 +29,12 @@ void setup() {
   prevCount4 = gEnc4.read();
   prevTime = millis();
   wheels.setSpeeds(100, -100, 100, -100);
+  delay(500);
+  wheels.setSpeeds(200, -200, 200, -200);
+  delay(500);
+  wheels.setSpeeds(300, -300, 300, -300);
+  delay(500);
+  wheels.setSpeeds(400, -400, 400, -400);
 }
 
 void loop() {
@@ -52,24 +59,24 @@ void displayEncoderSpeeds() {
   float speed3 = calculateSpeed(currCount3, prevCount3, currTime, prevTime);
   float speed4 = calculateSpeed(currCount4, prevCount4, currTime, prevTime);
 
-  Serial.print("Counts: ");
-  Serial.print(currCount1);
-  Serial.print(" | ");
-  Serial.print(currCount2);
-  Serial.print(" | ");
-  Serial.print(currCount3);
-  Serial.print(" | ");
-  Serial.print(currCount4);
-  Serial.print(" | Speeds: ");
+  Serial2.print("Counts: ");
+  Serial2.print(currCount1);
+  Serial2.print(" | ");
+  Serial2.print(currCount2);
+  Serial2.print(" | ");
+  Serial2.print(currCount3);
+  Serial2.print(" | ");
+  Serial2.print(currCount4);
+  Serial2.print(" | Speeds: ");
 
-  Serial.print(speed1);
-  Serial.print(" | ");
-  Serial.print(speed2);
-  Serial.print(" | ");
-  Serial.print(speed3);
-  Serial.print(" | ");
-  Serial.print(speed4);
-  Serial.println("");
+  Serial2.print(speed1);
+  Serial2.print(" | ");
+  Serial2.print(speed2);
+  Serial2.print(" | ");
+  Serial2.print(speed3);
+  Serial2.print(" | ");
+  Serial2.print(speed4);
+  Serial2.println("");
 
 
   // Update previous counts for each encoder

@@ -26,30 +26,178 @@ void executeMoveSequence(std::queue<Move>* moveQueue) {
   }
 }
 
+void driveToGoalPose(Pose goalPose, float driveTime) {
+  // NEED TO ADD PID
+  // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
+  // NEED TO REMOVE SILLY VELOCITY SCALE
+
+  /*
+  Adding PID will likely help prevent overshoot. As such, the velocity scale could be removed, and maybe the velocity rotation could even be removed, saving time
+  per cycle and making the PID even more effective at stopping us at the goal pose.
+  */
+
+  Velocities fwdVelocities;
+  Velocities pathVelocities;
+  Pose nextPose;
+  Pose errorPose;
+  Pose initialRobotPose; // for tracking how close we are to the goal pose
+  initialRobotPose.reset_pose(gRobotPose.x, gRobotPose.y, gRobotPose.theta);
+
+  float initialDistanceX = goalPose.x - gRobotPose.x;
+  float initialDistanceY = goalPose.y - gRobotPose.y;
+  //float initialDistanceXY = initialRobotPose.getDistanceToOtherPose(goalPose);
+  float initialDistanceTH = initialRobotPose.getAngularDistanceToOtherPose(goalPose);
+
+  //Initialize pathVelocities
+  pathVelocities.calculatePathVelocities(gRobotPose, goalPose, driveTime);
+
+  // Array to store calculated errors
+  float wheelSpeedsDes[cNumberOfWheels];
+  // Array to store measured wheel speeds
+  float odomWheelSpeeds[cNumberOfWheels];
+  // Array to store control signals for the wheels
+  float controlSignals[cNumberOfWheels];
+
+  // Misc floats
+  float Kp = 1;
+  float errorThreshInches = 0.2;
+  float errorThreshRad = 0.1;
+  
+  bool weHaventScaledYetX = true;
+  bool weHaventScaledYetY = true;
+  //bool weHaventScaledYetXY = true;
+  bool weHaventScaledYetTH = true;
+  float progressThresh = 0.9;
+  float xProgress, yProgress, thProgress;
+  //float xyProgress
+
+  while (!goalPose.aligned(gRobotPose, errorThreshInches, errorThreshRad)){
+    // Make sure the goal pose is relative to the way the robot is pointing.
+    //goalPose.rotate(-gRobotPose.theta);
+
+    // rotate path velocity to point from robot pose to goal pose always.
+    // this prevents continuous overshoot caused by a non-changing velocity direction.
+    pathVelocities.rotate(gRobotPose, goalPose);
+
+    // make the next goal position using the path velocity (deltaT implicitly calculated)
+    nextPose.update_pos(pathVelocities.xDot, pathVelocities.yDot, pathVelocities.thetaDot);
+
+    // Slow down if we are close to goal
+    //pathVelocities.scale(gRobotPose, initialRobotPose, goalPose); // this was an attempt
+    //xyProgress = (initialDistanceXY-gRobotPose.getDistanceToOtherPose(goalPose)) / initialDistanceXY;
+    xProgress = (initialDistanceX-(goalPose.x-gRobotPose.x)) / initialDistanceX;
+    yProgress = (initialDistanceY-(goalPose.y-gRobotPose.y)) / initialDistanceY;
+    thProgress = (initialDistanceTH - (goalPose.theta - gRobotPose.theta)) / initialDistanceTH;
+    //thProgress = (initialDistanceTH-gRobotPose.getAngularDistanceToOtherPose(goalPose)) / initialDistanceTH;
+    if ((xProgress > progressThresh) && weHaventScaledYetX) {
+      pathVelocities.xDot*=0.7;
+      weHaventScaledYetX = false;
+    }    
+    if ((yProgress > progressThresh) && weHaventScaledYetY) {
+      pathVelocities.yDot*=0.7;
+      weHaventScaledYetY = false;
+    }
+    if ((thProgress > progressThresh) && weHaventScaledYetTH) {
+      pathVelocities.thetaDot*=0.7;
+      weHaventScaledYetTH = false;
+    }
+
+    // generate errors between present pose and next pose.
+    errorPose.reset_pose(nextPose.x - gRobotPose.x, nextPose.y - gRobotPose.y, nextPose.theta - gRobotPose.theta);
+
+    // PID will go here. These are the 'control signals' before transforming to robot coordinates and mapping to correct units.
+    errorPose.x = Kp * errorPose.x;
+    errorPose.y = Kp * errorPose.y;
+    errorPose.theta = Kp * errorPose.theta;
+
+    // Transform errors to robot coordinates. IE, calculate the wheel speeds required to minimize error.
+    gWheelbase->computeWheelSpeeds(errorPose.x, errorPose.y, errorPose.theta, controlSignals);
+
+    // Convert control signals from rad/sec to motor driver units
+    radSecToMotorDriverSpeeds(controlSignals);
+
+    // Set the speeds to the control signals (minus signs to account for polarity)
+    gMecanumMotors.setSpeeds(controlSignals[0], -controlSignals[1], controlSignals[2], -controlSignals[3]);
+
+    // Get current wheel speeds from encoders
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();  // flip is taken care of in the wheel manager
+    odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
+
+    // Calculate current velocity based on wheel speeds and fwd kinematics
+    // modifies fwdVelocities in place
+    gWheelbase->computeVelocities(odomWheelSpeeds, fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+    // Update pose based on updated velocities
+    gRobotPose.update_pos(fwdVelocities.xDot, fwdVelocities.yDot, fwdVelocities.thetaDot);
+
+  }
+  gMecanumMotors.setSpeeds(0, 0, 0, 0);
+}
+
+// Experimental function that controls our robot with desired velocities until a condition is met.
 void executeVelocitiesUntilCondition(const Velocities& v, DrivingTerminationCondition term) {
-  // Array to store wheel speeds
+  // NEED TO ROTATE TO ROBOTS COORINATE SYSTEM AT CORRECT PLACE
+
+  // Array to store wheel speeds calculated based on desired velocities
   float wheelSpeeds[cNumberOfWheels];
+  // Array to store odometry speeds (for use in while loop)
+  float odomWheelSpeeds[cNumberOfWheels];
+  // Array for our command signals. This is the result of our PID algorithm.
+  float controlSignals[cNumberOfWheels];
+  // To store our velocities that the inverse kinematics mutates
+  Velocities ikVelocities;
+
   // Calculate required wheel speeds to achieve desired velocities
-  gWheelbase->computeWheelSpeeds(v.xDot , v.yDot, v.thetaDot, wheelSpeeds);
-  // Wheelspeeds now contains goal rad/sec values for each wheel. Needs to be in motors values
-  radSecToMotorDriverSpeeds(wheelSpeeds); // maps and constrains from -400 to 400 for motor drivers
-  // Wheelspeeds is now in motor driver units. 
+  gWheelbase->computeWheelSpeeds(v.xDot, v.yDot, v.thetaDot, wheelSpeeds);
+  // now take the integral of this to get position?
+
+  // Wheelspeeds now contains goal rad/sec values for each wheel.
   // Account for the polarity of our motors.
   wheelSpeeds[1] *= -1;
   wheelSpeeds[3] *= -1;
-  // We now want to command the motors to those speeds. 
+  // We now want to command the motors to those speeds.
   // More specifically, we want to ramp smoothly up to the goal speeds while numerically integrating our position until we reach the termination condition.
-  while (!term.tripped) {
+  // Initialize the ramp with 1 second ramp up time.
+  // It will ramp up our speeds based on the current time and the ramp time.
+  // If our current time exceeds the ramp time, the original goal will be returned.
+  MotorRamp ramp(wheelSpeeds, 1000);
+  while (!term.tripped) {  // while the condition has not been met
+    // Update odometry
+    // Todo: make wheelmanager manage all 4 wheels (take in an int to choose which wheel)
+    odomWheelSpeeds[0] = gWheel1Manager.getWheelSpeedRadPerSec();  // flip is taken care of in the wheel manager
+    odomWheelSpeeds[1] = gWheel2Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[2] = gWheel3Manager.getWheelSpeedRadPerSec();
+    odomWheelSpeeds[3] = gWheel4Manager.getWheelSpeedRadPerSec();
+
+    // Uses measured wheel speeds to calculate robot velocity with forward kinematics. Mutates ikVelocities in place.
+    gWheelbase->computeVelocities(odomWheelSpeeds, ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
+
+    // Automatically updates predicted position using the ik velocities
+    gRobotPose.update_pos(ikVelocities.xDot, ikVelocities.yDot, ikVelocities.thetaDot);
+
+    // Map controlSignals to our ramp function. Internally based on time and the goal speeds set when instantiating MotorRamp.
+    ramp.setControlSignals(controlSignals);  // mutates controlsignals
+
+    // Before calling setSpeeds, we map to -400, 400
+    radSecToMotorDriverSpeeds(controlSignals);
+    // Now we finally set the speeds after calculating them in rad/s with IK and ramping them.
+    gMecanumMotors.setSpeeds(controlSignals[0], controlSignals[1], controlSignals[2], controlSignals[3]);
+
     // Call function that checks the condition based on the condition type. It takes in term.
     // Inside that function, the termination condition gets tripped if the condition is met. This breaks the loop and we are done.
     switch (term.type) {
       case TerminationType::LineCovered:
+        // function that takes in term and switches it if the condition is met
         break;
       case TerminationType::LineCentered:
         break;
-      case TerminationType::AverageDistanceAway:
+      case TerminationType::AverageRangeFinderDistance:
         break;
       case TerminationType::DistanceTraveled:
+        break;
+      case TerminationType::AngleReached:
         break;
       case TerminationType::TimeExpired:
         break;
@@ -111,8 +259,8 @@ void executeLineFollow(Move nextMove) {
 
   while (true) {
     // Poll the rangefinders continuously
-    float distanceLeft = getDistFromRangefinderFiltered(cDistPin1, gDistSensor1Readings);
-    float distanceRight = getDistFromRangefinderFiltered(cDistPin2, gDistSensor2Readings);
+    float distanceLeft = getDistFromRangeFinderFiltered(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+    float distanceRight = getDistFromRangeFinderFiltered(cDistPin2, DistanceCalibrationMaterial::Cardboard);
 
     // If close enough to the wall, stop
     if (distanceLeft <= targetDistance || distanceRight <= targetDistance) {
@@ -349,8 +497,8 @@ void executeReload(std::stack<Block>* blocks) {
 
 // Rotates the robot until it is aligned (facing squarely) with a wall.
 void squareUpUsingProx(int speed) {
-  float distanceLeft = getDistFromRangefinder(cDistPin1);
-  float distanceRight = getDistFromRangefinder(cDistPin1);
+  float distanceLeft = getDistFromRangeFinderFiltered(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+  float distanceRight = getDistFromRangeFinderFiltered(cDistPin2, DistanceCalibrationMaterial::Cardboard);
   float tolerance = 0.05;
 
   // Loop to adjust orientation until the robot is squared with the wall
@@ -365,13 +513,12 @@ void squareUpUsingProx(int speed) {
     delay(100);
 
     // Update distances after adjustment
-    distanceLeft = getDistFromRangefinder(cDistPin1);
-    distanceRight = getDistFromRangefinder(cDistPin1);
+    distanceLeft = getDistFromRangeFinderFiltered(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+    distanceRight = getDistFromRangeFinderFiltered(cDistPin2, DistanceCalibrationMaterial::Cardboard);
   }
 
   // Stop all wheels once squared up with the wall
   gMecanumMotors.setSpeeds(0, 0, 0, 0);
-  
 }
 
 
@@ -407,13 +554,13 @@ void centerOnIrArray(int speed) {
 
 // Makes the robot physically push the button. It first drives forward to the correct distance for begging to push the button.
 void pushButton(int speed) {
-  const float targetProximityForward = 0.4; //inches
+  const float targetProximityForward = 0.4;  //inches
   const float targetProximityBackward = 1.75;
 
   // Drive forward until the proximity sensor reads less than 3 cm
   while (true) {
-    float distanceLeft = getDistFromRangefinder(cDistPin1);
-    float distanceRight = getDistFromRangefinder(cDistPin2);
+    float distanceLeft = getDistFromRangeFinderFiltered(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+    float distanceRight = getDistFromRangeFinderFiltered(cDistPin2, DistanceCalibrationMaterial::Cardboard);
     float avgDistance = (distanceLeft + distanceRight) / 2.0;
 
     if (avgDistance < targetProximityForward) {
@@ -431,8 +578,8 @@ void pushButton(int speed) {
 
   // Reverse until the proximity sensor reads less than 7 cm
   while (true) {
-    float distanceLeft = getDistFromRangefinder(cDistPin1);
-    float distanceRight = getDistFromRangefinder(cDistPin2);
+    float distanceLeft = getDistFromRangeFinderFiltered(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+    float distanceRight = getDistFromRangeFinderFiltered(cDistPin2, DistanceCalibrationMaterial::Cardboard);
     float avgDistance = (distanceLeft + distanceRight) / 2.0;
 
     if (avgDistance > targetProximityBackward) {
@@ -474,7 +621,7 @@ void runWheelMotorsWithBlockingDelay(int delayTime, float* targetWheelSpeeds) {
 
 
 
-// Maps goal speeds to the motor libraries range (0 to 400) and sets the motors to those speeds. 
+// Maps goal speeds to the motor libraries range (0 to 400) and sets the motors to those speeds.
 void runWheelMotorsDirectly(float* targetWheelSpeeds) {
   if (!targetWheelSpeeds) {
     DEBUG_PRINTLN("Error: targetWheelSpeeds is null.");
