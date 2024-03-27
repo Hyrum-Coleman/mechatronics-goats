@@ -1,8 +1,8 @@
 clear, clc, close all;
 
 % Given values for K and tau
-K = 25;
-tau = 16.25;
+K = 1.538;
+tau = .0615;
 
 % Transfer function G(s) = K / (tau*s + 1)
 num = K;
@@ -13,7 +13,9 @@ G = tf(num, den);
 d = 1; % assuming a step input of 1 Volt
 
 % Part b) Step response for a step input of magnitude d
-
+syms unitD;
+figure;
+fplot(heaviside(unitD), [-1, 4 * tau]);
 
 % Plot the step response - velocity vs. time
 figure;
