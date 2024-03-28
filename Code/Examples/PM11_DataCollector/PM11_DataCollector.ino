@@ -1,6 +1,6 @@
 // Lab11Template.ino
-// Prof. Stephen Mascaro
-// 11/06/23
+// Prof. Stephen Mascaro, Mod Kin Blandford
+// Mar 28 24
 
 //  This sketch will be used to perform line localization and line following
 #include <Encoder.h>
@@ -17,19 +17,16 @@ DualTB9051FTGMotorShieldMod3230 gMecanumMotors;
 double t, t_old, t0, deltaT, print_time=0; // declare some time variables
 
 long counts1, counts2, counts3, counts4;
-int m1command=200, m2command=200;  //declare and initialize motor commands
+int motorCommand=200;  //declare and initialize motor command
 
 double GearRatio = 50; 
 int countsPerRev = 64; // encoder counts per Rev
-//double rw = 4.2; // wheel radius in cm
-//double D = 26; // distance between wheels in cm
 
 double theta1, omega1, theta1_old = 0;
 double theta2, omega2, theta2_old = 0;
 double theta3, omega3, theta3_old = 0;
 double theta4, omega4, theta4_old = 0;
-//double omega1f=0,omega2f=0, alpha=0.01; //digital filter
-//double m1current, m1currentf;
+
 String inString = "";
 
 void setup() {
@@ -70,18 +67,20 @@ void loop() {
   
   //Put step command here
   bool step = (1 < t && t < 2);
-  md.setSpeeds(m1command * step, m2command * step); // send motor commands
+  gMecanumMotors.setSpeeds(motorCommand*step, -motorCommand*step, motorCommand*step, -motorCommand*step); // send motor commands
   
   // Put print commands here
   Serial.print(t);
   Serial.print("\t");
   Serial.print(omegaAvg);
   Serial.print("\t");
-  Serial.print(m1command * step);
+  Serial.print(motorCommand * step);
   Serial.println("");
 
 
   t_old = t;
   theta1_old = theta1;
   theta2_old = theta2;
+  theta3_old = theta3;
+  theta4_old = theta4;
 }
