@@ -18,7 +18,7 @@ int32_t prevCount4 = 0;
 unsigned long prevTime = 0;
 const int cEncoderCountsPerRev = 64;
 const int cWheelMotorGearRatio = 50;
-const float cWheelRadius = 1.2795;
+const float cWheelRadius = 1.1811;
 const int cDistPin1 = A4;  // Left IR rangefinder sensor
 const int cDistPin2 = A5;  // Right IR rangefinder sensor
 float distance = 0;
@@ -35,7 +35,7 @@ void setup() {
   prevCount4 = gEnc4.read();
   prevTime = millis();
   // drive backwards
-  wheels.setSpeeds(-75, 75, -75, 75);
+  wheels.setSpeeds(-50, 50, -50, 50);
   pinMode(cDistPin1, INPUT);
   pinMode(cDistPin2, INPUT);
   Serial2.println("BEGIN DATA");
