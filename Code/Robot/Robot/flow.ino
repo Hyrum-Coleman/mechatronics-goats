@@ -10,8 +10,6 @@ void read_serial(JsonDocument& doc) {
   }
 }
 
-
-
 void parseJsonIntoQueue(std::queue<Move>* moveQueue, JsonDocument& doc) {
   for (JsonObject obj : doc["g"].as<JsonArray>()) {  // g for go
     Move currentMove;
@@ -72,8 +70,6 @@ void standbyJSON(JsonDocument& doc, std::queue<Move>* moveQueue, States& state) 
   }
 }
 
-
-
 void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>* blocks, States& state) {
   DEBUG_PRINT("STANDBY IR... <");
   DEBUG_PRINT(millis() / 1000.0);
@@ -95,14 +91,31 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
       DEBUG_PRINTLN("CALIBRATING COLORS");
       calibrateColorSensor();
       break;
-    case RemoteButtons::eForward:  // run the course code
-      DEBUG_PRINTLN("BEGINNING RELOAD TEST");
-      move.moveType = MoveType::eLineFollow;  // linefollow up to reloader. This is a placeholder sorta
-      move.params.linefollowParams.speed = gDriveSpeed;
-      move.params.linefollowParams.stopDistance = 10;
-      moveQueue->push(move);
-      executeMoveSequence(moveQueue);
-      executeReload(blocks);
+    case RemoteButtons::eForward:  // run tests
+      //DEBUG_PRINTLN("BEGINNING RELOAD TEST");
+      //move.moveType = MoveType::eLineFollow;  // linefollow up to reloader. This is a placeholder sorta
+      //move.params.linefollowParams.speed = gDriveSpeed;
+      //move.params.linefollowParams.stopDistance = 2.5;
+      //moveQueue->push(move);
+      //executeMoveSequence(moveQueue);
+      //executeReload(blocks);
+
+      driveInStraightLine(20, 2);
+      rotateInPlaceDegrees(180, 2); 
+      driveInArcDegrees(10, 90, 3); 
+
+      /*Pose goalPose(20, 20, 0); 
+      driveToGoalPose(goalPose, 4);
+      gRobotPose.reset_pose();
+
+      goalPose.reset_pose(-20, -20, PI);
+      driveToGoalPose(goalPose, 7);
+      gRobotPose.reset_pose();
+
+      goalPose.reset_pose(0, 0, PI);
+      driveToGoalPose(goalPose, 2);
+      gRobotPose.reset_pose();*/
+
       break;
     case RemoteButtons::eVolPlus:      // Drive forwards
     case RemoteButtons::eBack:         // Drive left
@@ -145,8 +158,6 @@ void standbyIR(JsonDocument& doc, std::queue<Move>* moveQueue, std::stack<Block>
   IrReceiver.resume();
   delay(100);  //debounce
 }
-
-
 
 void standbyRC(States& state) {
   DEBUG_PRINT("STANDBY RC... <");
@@ -217,8 +228,6 @@ void standbyRC(States& state) {
   IrReceiver.resume();
   gLastRCCommandTime = millis();
 }
-
-
 
 // The mode where sensor values are printed continuously. 
 void standbySensorDump(States& state) {

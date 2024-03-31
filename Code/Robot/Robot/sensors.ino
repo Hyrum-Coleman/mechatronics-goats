@@ -3,15 +3,11 @@ void addBlockToBelt(std::stack<Block>* blocks, Block blockToAdd) {
   return;
 }
 
-
-
 Block getNextBlock(std::stack<Block>* blocks) {
   Block topBlock = blocks->top();
   blocks->pop();
   return topBlock;
 }
-
-
 
 Block createBlock(RGB rgb) {
   Block newBlock;
@@ -47,15 +43,11 @@ Block createBlock(RGB rgb) {
   return newBlock;
 }
 
-
-
 void addBlockToStackFromRGB(std::stack<Block>* blocks, RGB rgb) {
   Block newBlock = createBlock(rgb);
 
   addBlockToBelt(blocks, newBlock);
 }
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 // Takes a BlockColor enumeration and returns a string that can be printed to the serial monitor. Not used for control flow purposes.
 const char* blockColorToString(BlockColor color) {
@@ -64,12 +56,10 @@ const char* blockColorToString(BlockColor color) {
     case BlockColor::Yellow: return "Yellow";
     case BlockColor::Blue: return "Blue";
     case BlockColor::None: return "None";
-    case BlockColor::UnCalibrated: return "Uncalibrated";
+    case BlockColor::UnCalibrated: return "Unc";
     default: return "Unknown";
   }
 }
-
-
 
 // Predicts the color of a block based on the color reading by comparing it to our calibration values.
 BlockColor predictColor(RGB colorReading) {
@@ -106,8 +96,6 @@ BlockColor predictColor(RGB colorReading) {
     return BlockColor::Blue;
   }
 }
-
-
 
 // Function to calibrate our color sensor to the three blocks. It's automated/guided.
 void calibrateColorSensor() {
@@ -175,14 +163,10 @@ void calibrateColorSensor() {
   }
 }
 
-
-
 // Function to calculate the Euclidean distance between two colors. We use it to compare colors similarity. It is the best way to do this.
 float colorDistance(float color1[3], float color2[3]) {
   return sqrt(pow(color1[0] - color2[0], 2) + pow(color1[1] - color2[1], 2) + pow(color1[2] - color2[2], 2));
 }
-
-
 
 // Helper function to check if the sensor is calibrated
 bool isColorSensorCalibrated() {
@@ -194,8 +178,6 @@ bool isColorSensorCalibrated() {
   }
   return true;  // calibrated
 }
-
-
 
 // This function reads the color sensor and stores it in the RGB struct
 // Important to note that the clear channel value is currently being discarded.
@@ -213,72 +195,7 @@ RGB readGlobalColorSensor() {
   return rgb;
 }
 
-// Function to calculate distance based on sensor reading for the left sensor
-double calculateDistanceLeft(int sensorValue) {
-  double a = -0.73810816;
-  double b = 5.55203935;
-  double logSensorValue = log(sensorValue);
-  double distance = exp((logSensorValue - b) / a);
-  return distance;
-}
-
-// Function to calculate distance based on sensor reading for the right sensor
-double calculateDistanceRight(int sensorValue) {
-  double a = -0.6871539;
-  double b = 5.5796678;
-  double logSensorValue = log(sensorValue);
-  double distance = exp((logSensorValue - b) / a);
-  return distance;
-}
-
-// Returns the calculated distance of our rangefinder. 
-double getDistFromRangefinder(int pin) {
-  int sensorValue = analogRead(pin);
-
-  if (pin == cDistPin1) {
-    return calculateDistanceLeft(sensorValue);
-  }
-  if (pin == cDistPin2) {
-    return calculateDistanceRight(sensorValue);
-  }
-
-}
-
-// Returns the calculated distance of our rangefinder. 
-float getRangefinderRawReading(int pin) {
-  int sensorValue = analogRead(pin);
-  return sensorValue;
-}
-
-// Returns the calculated distance of our rangefinder. Uses a moving average filter. 
-float getDistFromRangefinderFiltered(int pin, std::queue<float>& readingsQueue) {
-  int sensorValue = analogRead(pin);
-  float distance;
-
-  if (pin == cDistPin1) {
-    distance = calculateDistanceLeft(sensorValue);
-  }
-  if (pin == cDistPin2) {
-    distance = calculateDistanceRight(sensorValue);
-  }
-
-  // Add new reading to the queue
-  if (readingsQueue.size() >= cFilterWindowSize) {
-    readingsQueue.pop();  // Remove the oldest reading if we've reached capacity
-  }
-  readingsQueue.push(distance);
-
-  // Calculate the moving average
-  float sum = 0;
-  for (std::queue<float> tempQueue = readingsQueue; !tempQueue.empty(); tempQueue.pop()) {
-    sum += tempQueue.front();
-  }
-  float averageDistance = sum / readingsQueue.size();
-
-  return averageDistance;
-}
-
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 // Calibrates the IR array by spinning in a circle while calling the calibrate method of the QTR library (which asks you to move the array over a line)
 void calibrateIrArray(Move nextMove) {
@@ -296,15 +213,113 @@ void calibrateIrArray(Move nextMove) {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+// TODO: Consolidate these into fewer functions.
+
+// Function to calculate distance based on sensor reading for the left sensor
+double calculateDistanceLeft(int sensorValue, DistanceCalibrationMaterial mat) {
+  // This catches low noise that blows up our value
+  if (sensorValue < 75) {  // min effectiveness of our sensor
+    return 5.5;            // Max distance we can see
+  }
+
+  double a;
+  double b;
+
+  switch (mat) {
+    case DistanceCalibrationMaterial::Button:
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
+      break;
+    case DistanceCalibrationMaterial::Chassis:
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
+      break;
+    default:
+      a = -0.6579;
+      b = 5.5182;
+      break;
+  }
+
+  double logSensorValue = log(sensorValue);
+  double distance = exp((logSensorValue - b) / a);
+  return distance;
+}
+
+// Function to calculate distance based on sensor reading for the right sensor
+double calculateDistanceRight(int sensorValue, DistanceCalibrationMaterial mat) {
+  // This catches low noise that blows up our value
+  if (sensorValue < 75) {  // min effectiveness of our sensor
+    return 5.5;            // Max distance we can see
+  }
+
+  double a;
+  double b;
+
+  switch (mat) {
+    case DistanceCalibrationMaterial::Button:
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
+      break;
+    case DistanceCalibrationMaterial::Chassis:
+      a = 0;  // NOT YET CALIBRATED
+      b = 0;  // NOT YET CALIBRATED
+      break;
+    default:
+      a = -0.6165;
+      b = 5.5499;
+      break;
+  }
+
+  double logSensorValue = log(sensorValue);
+  double distance = exp((logSensorValue - b) / a);
+  return distance;
+}
+
+// The next two functions are pretty similar. I'm still trying to think of a better way.
+// Returns the calculated distance of our rangefinder.
+float getDistFromRangeFinder(int pin, DistanceCalibrationMaterial mat) {
+  int sensorValue = analogRead(pin);
+
+  if (pin == cDistPin1) {
+    return calculateDistanceLeft(sensorValue, mat);
+  }
+  if (pin == cDistPin2) {
+    return calculateDistanceRight(sensorValue, mat);
+  }
+  // else? idk. just dont call it with the wrong pin ig. skill issue if you do.
+}
+
+// Returns the calculated distance of our rangefinder. Now uses an IIR filter
+float getDistFromRangeFinderFiltered(int pin, DistanceCalibrationMaterial mat) {
+
+  int sensorValue = analogRead(pin);
+  float distance;
+
+  if (pin == cDistPin1) {
+    distance = calculateDistanceLeft(sensorValue, mat);
+    return gDistLeftFilter.process(distance);
+  }
+  if (pin == cDistPin2) {
+    distance = calculateDistanceRight(sensorValue, mat);
+    return gDistRightFilter.process(distance);
+  }
+  // else? idk. just dont call it with the wrong pin ig. skill issue if you do.
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 // Prints all of the sensor values at the current time neatly.
 void debugPrintSensors() {
   float hallVoltage = getCurrentHallVoltage();
+  float hallVoltageFiltered = getCurrentHallVoltageFiltered();
   RGB colorReading = readGlobalColorSensor();
   int total = colorReading.r + colorReading.g + colorReading.b;
   uint8_t rgbProximity = gApds.readProximity();
   uint16_t linePosition = gQtr.readLineBlack(gLineSensorValues);
-  float distanceLeft = getDistFromRangefinder(cDistPin1);
-  float distanceRight = getDistFromRangefinder(cDistPin2);
+  float distanceLeft = getDistFromRangeFinder(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+  float distanceRight = getDistFromRangeFinder(cDistPin2, DistanceCalibrationMaterial::Cardboard);
+  float distanceLeftFiltered = getDistFromRangeFinderFiltered(cDistPin1, DistanceCalibrationMaterial::Cardboard);
+  float distanceRightFiltered = getDistFromRangeFinderFiltered(cDistPin2, DistanceCalibrationMaterial::Cardboard);
   BlockColor predictedColor = predictColor(colorReading);
 
   Serial2.print("Hall: ");
@@ -345,18 +360,35 @@ void debugPrintSensors() {
     Serial2.print(" | Magnet: No");
   }
 
+  Serial2.print(" | ");
+
+  Serial2.print("Hall(IIR): ");
+  Serial2.print(hallVoltageFiltered, 2);
+
+  Serial2.print(" | Prox IIR (L,R): (");
+  Serial2.print(distanceLeftFiltered, 2);  // this appears slow because we aren't polling very fast in this mode!
+  Serial2.print(",");
+  Serial2.print(distanceRightFiltered, 2);
+  Serial2.print(")");
+
   Serial2.println("");
 
   delay(200);
 }
 
-bool isMagnetDetected() {
-  return abs(getCurrentHallVoltage() - cHallReloadingQuiescent) > 50;
-}
 
+
+bool isMagnetDetected() {
+  return abs(getCurrentHallVoltageFiltered() - cHallReloadingQuiescent) > 50;
+}
 
 // Returns the voltage of the hall effect sensor
 float getCurrentHallVoltage() {
   float hallVoltage = analogRead(cHallSensorPin);
   return hallVoltage;
+}
+
+float getCurrentHallVoltageFiltered() {
+  float hallVoltage = analogRead(cHallSensorPin);
+  return gHallFilter.process(hallVoltage);
 }

@@ -41,24 +41,6 @@
       "y": 0,
       "th": -1.57,
       "t": 1.5
-    },
-    {
-      "type": 3,
-      "direction": 1
-    },
-    {
-      "type": 3,
-      "direction": 0
-    },
-    {
-      "type": 4,
-      "direction": 1,
-      "duration": 1000
-    },
-    {
-      "type": 4,
-      "direction": 0,
-      "duration": 1000
     }
   ]
 }
