@@ -1733,6 +1733,7 @@ DPDT SMT slide switch, AYZ0202, SWCH-08179</description>
 <part name="GND18" library="ElectricalDiagramLibrary" deviceset="GND" device=""/>
 <part name="GND19" library="ElectricalDiagramLibrary" deviceset="GND" device=""/>
 <part name="GND13" library="ElectricalDiagramLibrary" deviceset="GND" device=""/>
+<part name="U$7" library="ElectricalDiagramLibrary" deviceset="QTR-MD-7RC" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -1893,6 +1894,10 @@ DPDT SMT slide switch, AYZ0202, SWCH-08179</description>
 </instance>
 <instance part="GND13" gate="1" x="111.76" y="129.54" smashed="yes">
 <attribute name="VALUE" x="111.76" y="129.286" size="1.778" layer="96" font="vector" align="top-center"/>
+</instance>
+<instance part="U$7" gate="G$1" x="-99.06" y="12.7" smashed="yes" rot="R180">
+<attribute name="NAME" x="-93.98" y="-10.16" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-93.98" y="20.32" size="1.778" layer="96" rot="R180"/>
 </instance>
 </instances>
 <busses>
@@ -2587,6 +2592,48 @@ DPDT SMT slide switch, AYZ0202, SWCH-08179</description>
 <pinref part="B1" gate="B1" pin="21(SCL)"/>
 <wire x1="15.24" y1="-17.78" x2="20.32" y2="-17.78" width="0.1524" layer="91"/>
 <wire x1="20.32" y1="-17.78" x2="20.32" y2="101.6" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$58" class="0">
+<segment>
+<pinref part="U$7" gate="G$1" pin="O1"/>
+<wire x1="-88.9" y1="0" x2="-15.24" y2="0" width="0.1524" layer="91"/>
+<pinref part="B1" gate="B1" pin="A13"/>
+</segment>
+</net>
+<net name="N$59" class="0">
+<segment>
+<pinref part="U$7" gate="G$1" pin="O2"/>
+<pinref part="B1" gate="B1" pin="A12"/>
+<wire x1="-88.9" y1="2.54" x2="-15.24" y2="2.54" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$60" class="0">
+<segment>
+<pinref part="U$7" gate="G$1" pin="O3"/>
+<pinref part="B1" gate="B1" pin="A11"/>
+<wire x1="-88.9" y1="5.08" x2="-15.24" y2="5.08" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$61" class="0">
+<segment>
+<pinref part="U$7" gate="G$1" pin="O4"/>
+<pinref part="B1" gate="B1" pin="A10"/>
+<wire x1="-88.9" y1="7.62" x2="-15.24" y2="7.62" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$62" class="0">
+<segment>
+<pinref part="U$7" gate="G$1" pin="O5"/>
+<pinref part="B1" gate="B1" pin="A9"/>
+<wire x1="-88.9" y1="10.16" x2="-15.24" y2="10.16" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$63" class="0">
+<segment>
+<pinref part="U$7" gate="G$1" pin="O6"/>
+<pinref part="B1" gate="B1" pin="A8"/>
+<wire x1="-88.9" y1="12.7" x2="-15.24" y2="12.7" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
