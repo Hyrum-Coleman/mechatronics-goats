@@ -1,12 +1,7 @@
 {
-  "blocks": [
-            "n", "n", "n", 
-         
-    "n",    "n", "n", "n",    "n", 
-    "n",    "n",      "n",    "n", 
-    "n",    "n", "n", "n",    "n", 
-    
-            "n", "n", "n"
-  ]
+  "Startblock": {
+    "color": "b",
+    "landmark": "w",
+    "placementLocation": "tl"
+  }
 }
-
