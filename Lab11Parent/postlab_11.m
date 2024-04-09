@@ -76,7 +76,7 @@ plot(driveTime - 1, driveRad, 'ro', 'DisplayName', 'Step Response Data');
 hold off;
 xlabel('Time (s)'); % Label the x-axis
 ylabel('Rotational Velocity (rad/s)'); % Label the y-axis
-title('Step Response'); % Title the plot
+title('Driving Step Response'); % Title the plot
 legend(); % Add a legend
 
 
