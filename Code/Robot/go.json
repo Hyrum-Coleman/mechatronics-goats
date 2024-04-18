@@ -5,12 +5,13 @@
 
 	"n",   "n", "n", "n",   "n",
 	"n",   "n",      "n",   "n",
-	"n",   "n", "n", "n",   "x",
+	"n",   "n", "n", "n",   "n",
 
 	       "n", "n", "n"
 
 	   ],
 
-  "config": 1,
-  "reload": 0
+  "config": 0,
+  "reload": 0,
+  "reloadcount": 3
 }
